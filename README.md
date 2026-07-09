@@ -91,10 +91,10 @@ If you are in crisis or experiencing severe distress, please seek immediate help
 
 ## 📬 Contact
 
-- **Developer**: Pawan Saini  
-- **Email**: pawansaini10101@gmail.com  
-- **GitHub**: [github.com/yourusername](https://github.com/yourusername)  
-- **LinkedIn**: [linkedin.com/in/yourprofile](https://linkedin.com/in/pawansaini02)
+- **Developer**: Parth Narang  
+- **Email**: parthnarang9may@gmail.com  
+- **GitHub**: [github.com/Parth-Narang](https://github.com/Parth-Narang)  
+- **LinkedIn**: [linkedin.com/in/parthnarang09](https://linkedin.com/in/parthnarang09)
 
 ---
 

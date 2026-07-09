@@ -717,13 +717,14 @@ def inject_custom_css(theme, font_scale="Spacious", active_tab="Sanctuary"):
         [data-testid="stBottom"] {{
             position: fixed !important;
             bottom: 0px !important;
-            left: 0px !important;
+            left: var(--sidebar-width, 0px) !important;
             right: 0px !important;
             z-index: 999980 !important;
             background-color: {bg} !important;
             padding-bottom: 0px !important;
             padding-top: 0px !important;
             margin: 0 !important;
+            transition: left 0.2s ease-in-out !important;
         }}
         [data-testid="stBottomBlockContainer"] {{
             background-color: {bg} !important;
@@ -1639,21 +1640,13 @@ def main():
             const header = parentDoc.querySelector('.st-key-main_header');
             const footer = parentDoc.querySelector('[data-testid="stBottom"]');
             const sidebar = parentDoc.querySelector('[data-testid="stSidebar"]');
+            const mainContent = parentDoc.querySelector('[data-testid="stMain"]');
 
             const updateLayout = () => {
                 const headerHeight = header ? header.getBoundingClientRect().height : 0;
                 const footerHeight = footer ? footer.getBoundingClientRect().height : 0;
-                let sidebarWidth = 0;
-                
-                // Streamlit sidebar translated off-screen has left < 0 even if width > 0.
-                // We check if it is positioned exactly at left: 0 to determine if it is expanded.
-                if (sidebar && sidebar.getBoundingClientRect().left === 0) {
-                    sidebarWidth = sidebar.getBoundingClientRect().width;
-                }
-
                 parentDoc.documentElement.style.setProperty('--header-height', `${headerHeight}px`);
                 parentDoc.documentElement.style.setProperty('--input-height', `${footerHeight}px`);
-                parentDoc.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth}px`);
             };
 
             const layoutResizeObserver = new ResizeObserver(() => {
@@ -1663,6 +1656,23 @@ def main():
             if (header) layoutResizeObserver.observe(header);
             if (footer) layoutResizeObserver.observe(footer);
             if (sidebar) layoutResizeObserver.observe(sidebar);
+            if (mainContent) layoutResizeObserver.observe(mainContent);
+
+            // Smoothly track sidebar width during transform animations
+            let lastSidebarRight = -1;
+            const trackSidebarWidth = () => {
+                if (sidebar) {
+                    const rect = sidebar.getBoundingClientRect();
+                    // The on-screen width from the left edge is simply its 'right' bound, floored at 0
+                    const currentRight = Math.max(0, rect.right);
+                    if (currentRight !== lastSidebarRight) {
+                        parentDoc.documentElement.style.setProperty('--sidebar-width', `${currentRight}px`);
+                        lastSidebarRight = currentRight;
+                    }
+                }
+                requestAnimationFrame(trackSidebarWidth);
+            };
+            requestAnimationFrame(trackSidebarWidth);
 
             // Run an immediate calculation
             updateLayout();
