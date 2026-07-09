@@ -339,6 +339,9 @@ def inject_custom_css(theme, font_scale="Spacious", active_tab="Sanctuary"):
     .block-container {{
         padding-top: calc(var(--header-height, 72px) + var(--spacing-lg, 24px)) !important;
         padding-bottom: calc(var(--input-height, 80px) + var(--spacing-lg, 24px)) !important;
+        max-width: 1000px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
     }}
     /* Natural chat history container block */
     .st-key-chat_history_container {{
@@ -362,7 +365,7 @@ def inject_custom_css(theme, font_scale="Spacious", active_tab="Sanctuary"):
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=EB+Garamond:wght@500;600;700&display=swap');
 
-        /* CSS Variables for Spacing System & Typography */
+        /* CSS Variables for Spacing System & Typography & Dynamic Themes */
         :root {{
             --spacing-xs: clamp(4px, 0.5vw, 8px);
             --spacing-sm: clamp(8px, 1vw, 12px);
@@ -377,6 +380,21 @@ def inject_custom_css(theme, font_scale="Spacious", active_tab="Sanctuary"):
             --font-lg: clamp(18px, 1.5vw + 12px, 22px);
             --font-xl: clamp(24px, 2.5vw + 16px, 32px);
             --sidebar-fallback-width: 0px;
+
+            /* Dynamic Theme Variables inherited by both App and React Portals */
+            --background-primary: {bg};
+            --text-primary: {text};
+            --sidebar-background: {sidebar_bg};
+            --outline-color: {outline};
+            --accent-primary: {primary};
+            --card-background: {card_bg};
+            --active-background: {active_bg};
+        }}
+
+        /* Enforce viewport backgrounds to match active theme to prevent white bleed on mobile sidebar dimming */
+        html, body {{
+            background-color: var(--background-primary) !important;
+            background: var(--background-primary) !important;
         }}
 
         /* Sidebar state tracking for custom layout adjustments */
@@ -394,8 +412,8 @@ def inject_custom_css(theme, font_scale="Spacious", active_tab="Sanctuary"):
 
         /* Global App Setup */
         .stApp {{
-            background-color: var(--background-color, {bg}) !important;
-            color: var(--text-color, {text}) !important;
+            background-color: var(--background-primary) !important;
+            color: var(--text-primary) !important;
             font-family: 'Be Vietnam Pro', sans-serif !important;
         }}
 
@@ -433,14 +451,37 @@ def inject_custom_css(theme, font_scale="Spacious", active_tab="Sanctuary"):
         h3 {{ font-size: var(--font-base) !important; font-weight: 600 !important; margin-bottom: var(--spacing-xs) !important; }}
         p, span, label, div {{ font-size: var(--font-base); }}
 
+        /* Ensure all text labels and widget labels use the semantic text-primary theme color for high contrast readability (WCAG AA) */
+        [data-testid="stWidgetLabel"] p,
+        [data-testid="stWidgetLabel"] span,
+        [data-testid="stCheckbox"] label p,
+        [data-testid="stCheckbox"] label span,
+        [data-testid="stRadio"] label p,
+        [data-testid="stRadio"] label span,
+        [data-testid="stSelectbox"] label p,
+        [data-testid="stSlider"] label p,
+        [data-testid="stSidebar"] p,
+        [data-testid="stSidebar"] span,
+        [data-testid="stSidebar"] label,
+        [data-testid="stSidebar"] li,
+        [data-testid="stSidebar"] h1,
+        [data-testid="stSidebar"] h2,
+        [data-testid="stSidebar"] h3,
+        [data-testid="stPopoverBody"] p,
+        [data-testid="stPopoverBody"] span,
+        [data-testid="stPopoverBody"] label,
+        [data-testid="stPopoverBody"] div {{
+            color: var(--text-primary) !important;
+        }}
+
         /* Sidebar Styling */
         [data-testid="stSidebar"] {{
-            background-color: {sidebar_bg} !important;
-            border-right: 1px solid {outline} !important;
+            background-color: var(--sidebar-background) !important;
+            border-right: 1px solid var(--outline-color) !important;
             padding: 0 !important;
         }}
         [data-testid="stSidebarContent"] {{
-            background-color: {sidebar_bg} !important;
+            background-color: var(--sidebar-background) !important;
             padding: var(--spacing-md) !important;
             gap: var(--spacing-sm) !important;
         }}
@@ -458,6 +499,13 @@ def inject_custom_css(theme, font_scale="Spacious", active_tab="Sanctuary"):
         /* Hide Native Streamlit Sidebar Toggle (Hamburger Button) as it is handled by the custom header menu button */
         [data-testid="stSidebarCollapsedControl"] {{
             display: none !important;
+        }}
+
+        /* Enforce a consistent dark semi-transparent sidebar backdrop across all themes to prevent washed-out filters */
+        [data-testid="stSidebarBackdrop"] {{
+            background-color: rgba(0, 0, 0, 0.4) !important;
+            background-image: none !important;
+            opacity: 1 !important;
         }}
 
         /* Sidebar close button — same base style as the open toggle */
@@ -629,15 +677,19 @@ def inject_custom_css(theme, font_scale="Spacious", active_tab="Sanctuary"):
             padding: 0 !important;
         }}
         
-        /* Header icon buttons override style */
-        .st-key-main_header .stButton {{
+        /* Header icon buttons and popover buttons override style */
+        .st-key-main_header .stButton,
+        .st-key-main_header [data-testid="stPopover"],
+        .st-key-main_header .stPopover {{
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
             margin: 0 !important;
         }}
         
-        .st-key-main_header .stButton>button {{
+        .st-key-main_header .stButton>button,
+        .st-key-main_header [data-testid="stPopover"] button,
+        .st-key-main_header .stPopover button {{
             border: none !important;
             background: transparent !important;
             font-size: 20px !important;
@@ -649,16 +701,103 @@ def inject_custom_css(theme, font_scale="Spacious", active_tab="Sanctuary"):
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            color: var(--text-color, {text}) !important;
+            color: var(--text-primary) !important;
             line-height: 1 !important;
             transition: background-color 0.15s ease, transform 0.1s ease !important;
         }}
-        .st-key-main_header .stButton>button:hover {{
-            background-color: var(--secondary-background-color, {active_bg}) !important;
+        .st-key-main_header .stButton>button:hover,
+        .st-key-main_header [data-testid="stPopover"] button:hover,
+        .st-key-main_header .stPopover button:hover {{
+            background-color: var(--active-background) !important;
         }}
-        .st-key-main_header .stButton>button:focus-visible {{
-            outline: 2px solid var(--primary-color, {primary}) !important;
-            background-color: var(--secondary-background-color, {active_bg}) !important;
+        .st-key-main_header .stButton>button:focus-visible,
+        .st-key-main_header [data-testid="stPopover"] button:focus-visible,
+        .st-key-main_header .stPopover button:focus-visible {{
+            outline: 2px solid var(--accent-primary) !important;
+            background-color: var(--active-background) !important;
+        }}
+
+        /* Premium custom styling for popover dropdown menus */
+        [data-testid="stPopoverBody"] {{
+            background-color: var(--background-primary) !important;
+            background: var(--background-primary) !important;
+            border: 1px solid var(--outline-color) !important;
+            border-radius: var(--radius-md) !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.15) !important;
+            padding: 8px !important;
+            opacity: 1 !important;
+            margin-top: 8px !important;
+            z-index: 999999 !important;
+            min-width: 210px !important;
+        }}
+
+        /* Ensure the popover backdrop does not cover the fixed header, keeping header buttons interactive */
+        [data-testid="stPopoverBackdrop"] {{
+            top: var(--header-height, 70px) !important;
+        }}
+
+        /* Full-width menu rows for each theme option */
+        [data-testid="stPopoverBody"] [data-testid="stRadioOption"] {{
+            display: flex !important;
+            align-items: center !important;
+            width: 100% !important;
+            min-height: 44px !important;
+            padding: 8px 12px !important;
+            border-radius: var(--radius-md) !important;
+            margin: 4px 0 !important;
+            cursor: pointer !important;
+            transition: background-color 0.15s ease, color 0.15s ease !important;
+            color: var(--text-primary) !important;
+        }}
+
+        /* Hover state for theme option rows */
+        [data-testid="stPopoverBody"] [data-testid="stRadioOption"]:hover {{
+            background-color: var(--active-background) !important;
+        }}
+
+        /* Hide the default radio circle/bullet to allow pure menu appearance */
+        [data-testid="stPopoverBody"] [data-testid="stRadioOption"] > div:first-child {{
+            display: none !important;
+        }}
+
+        /* Make label text fill container, allow wrapping/newlines, and style subtitle */
+        [data-testid="stPopoverBody"] [data-testid="stRadioOption"] p,
+        [data-testid="stPopoverBody"] [data-testid="stRadioOption"] span,
+        [data-testid="stPopoverBody"] [data-testid="stRadioOption"] label {{
+            color: var(--text-primary) !important;
+            font-size: 11px !important; /* Subtitle font size */
+            font-family: 'Be Vietnam Pro', sans-serif !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            flex-grow: 1 !important;
+            white-space: pre-line !important;
+            display: block !important;
+            text-align: left !important;
+            line-height: 1.3 !important;
+            opacity: 0.8 !important;
+        }}
+
+        /* Style the first line (Theme Name & Emoji) as Title */
+        [data-testid="stPopoverBody"] [data-testid="stRadioOption"] p::first-line,
+        [data-testid="stPopoverBody"] [data-testid="stRadioOption"] span::first-line,
+        [data-testid="stPopoverBody"] [data-testid="stRadioOption"] label::first-line {{
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            opacity: 1 !important;
+            line-height: 1.6 !important;
+        }}
+
+        /* Highlight the active theme selection with subtle background and checkmark */
+        [data-testid="stPopoverBody"] [data-testid="stRadioOption"]:has(input[type="radio"]:checked) {{
+            background-color: var(--active-background) !important;
+            font-weight: 600 !important;
+        }}
+        [data-testid="stPopoverBody"] [data-testid="stRadioOption"]:has(input[type="radio"]:checked)::after {{
+            content: "✓" !important;
+            margin-left: auto !important;
+            color: var(--accent-primary) !important;
+            font-weight: bold !important;
+            font-size: 16px !important;
         }}
         
         /* Chat Inputs custom CSS */
@@ -668,30 +807,85 @@ def inject_custom_css(theme, font_scale="Spacious", active_tab="Sanctuary"):
             margin-bottom: 0px !important;
         }}
         [data-testid="stChatInput"] > div {{
-            border-radius: var(--radius-lg) !important;
+            border-radius: 24px !important;
             border: 1px solid {outline} !important;
             background-color: {bg} !important;
             padding: var(--spacing-sm) var(--spacing-md) !important;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+        }}
+        [data-testid="stChatInput"] > div:hover {{
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
+            border-color: {primary} !important;
+        }}
+        [data-testid="stChatInput"] > div:focus-within {{
+            border-color: {primary} !important;
+            box-shadow: 0 0 0 2px rgba(144, 70, 57, 0.15), 0 4px 16px rgba(0,0,0,0.06) !important;
         }}
         [data-testid="stChatInput"] input,
         [data-testid="stChatInput"] textarea {{
-            background-color: {bg} !important;
+            background-color: transparent !important;
             color: {text} !important;
             font-family: 'Be Vietnam Pro', sans-serif !important;
             font-size: var(--font-base) !important;
             border: none !important;
         }}
         [data-testid="stChatInput"] textarea {{
-            background-color: {bg} !important;
+            background-color: transparent !important;
+            resize: none !important;
         }}
         
-        /* Placeholder text styling - make it visible */
+        /* Placeholder text styling - make it visible but soft */
         [data-testid="stChatInput"] input::placeholder,
         [data-testid="stChatInput"] textarea::placeholder {{
+            color: #59605c !important;
+            opacity: 0.6 !important;
+            font-weight: 400 !important;
+        }}
+
+        /* Premium ChatGPT-style Send Button Styles */
+        [data-testid="stChatInput"] button {{
             color: {primary} !important;
-            opacity: 0.7 !important;
-            font-weight: 500 !important;
+            fill: {primary} !important;
+            background-color: transparent !important;
+            border-radius: 50% !important;
+            transition: all 0.2s ease-in-out !important;
+        }}
+        [data-testid="stChatInput"] button svg {{
+            fill: {primary} !important;
+            stroke: {primary} !important;
+            transition: all 0.2s ease-in-out !important;
+        }}
+        
+        /* Send Button Enabled State */
+        [data-testid="stChatInput"] button:not(:disabled) {{
+            color: #ffffff !important;
+            fill: #ffffff !important;
+            background-color: {primary} !important;
+            opacity: 1 !important;
+            cursor: pointer !important;
+        }}
+        [data-testid="stChatInput"] button:not(:disabled) svg {{
+            fill: #ffffff !important;
+            stroke: #ffffff !important;
+        }}
+        [data-testid="stChatInput"] button:not(:disabled):hover {{
+            background-color: {primary} !important;
+            opacity: 0.9 !important;
+            transform: scale(1.05) !important;
+        }}
+        
+        /* Send Button Disabled State */
+        [data-testid="stChatInput"] button:disabled {{
+            color: #999999 !important;
+            fill: #999999 !important;
+            background-color: transparent !important;
+            opacity: 0.3 !important;
+            cursor: not-allowed !important;
+        }}
+        [data-testid="stChatInput"] button:disabled svg {{
+            fill: #999999 !important;
+            stroke: #999999 !important;
         }}
         
         /* Checkbox list wrapper styles */
@@ -851,7 +1045,40 @@ def inject_custom_css(theme, font_scale="Spacious", active_tab="Sanctuary"):
             .hide-on-mobile {{ display: none !important; }}
             [data-testid="stAppViewBlockContainer"] {{ padding: var(--spacing-sm) !important; }}
             .user-chat-bubble, .assistant-bubble-wrap {{ max-width: 95% !important; }}
-            .st-key-main_header {{ flex-wrap: wrap !important; justify-content: center !important; gap: var(--spacing-sm) !important; }}
+            .st-key-main_header {{
+                justify-content: flex-start !important;
+                flex-wrap: nowrap !important;
+                gap: 8px !important;
+                padding-left: var(--spacing-sm) !important;
+                padding-right: var(--spacing-sm) !important;
+            }}
+            .st-key-main_header > div,
+            .st-key-main_header [data-testid="column"],
+            .st-key-main_header [data-testid="element-container"],
+            .st-key-main_header [data-testid="stPopover"],
+            .st-key-main_header .stPopover {{
+                flex: none !important;
+                flex-grow: 0 !important;
+                flex-shrink: 0 !important;
+                width: auto !important;
+                min-width: 0px !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }}
+            .st-key-main_header [data-testid="stMarkdownContainer"] {{
+                flex: none !important;
+                justify-content: flex-start !important;
+                width: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }}
+            .st-key-main_header h2 {{
+                font-size: 20px !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+            }}
 
             /* Mobile: sidebar becomes a full-screen overlay */
             [data-testid="stSidebar"][aria-expanded="true"] {{
@@ -868,6 +1095,17 @@ def inject_custom_css(theme, font_scale="Spacious", active_tab="Sanctuary"):
                 width: 100% !important;
                 max-width: 100% !important;
                 overflow-y: auto !important;
+            }}
+        }}
+
+        /* Mobile Landscape Orientation adjustments */
+        @media (max-width: 768px) and (orientation: landscape) {{
+            .st-key-main_header {{
+                padding-top: 6px !important;
+                padding-bottom: 6px !important;
+            }}
+            .st-key-main_header h2 {{
+                font-size: 18px !important;
             }}
         }}
     </style>
@@ -1627,9 +1865,10 @@ def main():
                     }
                     e.preventDefault();
                     e.stopPropagation();
-                }, true);
+                }, true); // Capture phase ensures we intercept the event before Streamlit triggers reruns
             }
         };
+
 
         // 2. Real-Time Dimension Measurements using ResizeObserver (Dynamic Spacing Variables)
         const setupLayoutObserver = () => {
@@ -1657,11 +1896,6 @@ def main():
             if (footer) layoutResizeObserver.observe(footer);
             if (sidebar) layoutResizeObserver.observe(sidebar);
             if (mainContent) layoutResizeObserver.observe(mainContent);
-
-            // NOTE: We dynamically track the sidebar width above. Before this script
-            // runs, the header uses CSS sibling selectors for instant positioning.
-            // Once the JS initializes, this observer sets the exact --sidebar-width
-            // variable dynamically, avoiding hardcoding and handling user resize/zoom.
 
             // Run an immediate calculation
             updateLayout();
