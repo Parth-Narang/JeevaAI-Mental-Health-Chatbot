@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Jeeva | Your Digital Sanctuary</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&amp;family=EB+Garamond:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#dac1bd",
+                    "surface-container-high": "#eae8e5",
+                    "on-tertiary-fixed": "#1b1c1c",
+                    "inverse-on-surface": "#f2f0ed",
+                    "tertiary": "#5c5c5c",
+                    "on-secondary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "primary": "#904639",
+                    "error": "#ba1a1a",
+                    "on-error-container": "#93000a",
+                    "tertiary-container": "#757474",
+                    "secondary-container": "#dae1dc",
+                    "on-secondary-container": "#5d6460",
+                    "on-background": "#1b1c1a",
+                    "on-primary-fixed": "#3c0702",
+                    "on-secondary-fixed-variant": "#414844",
+                    "on-primary": "#ffffff",
+                    "primary-fixed": "#ffdad4",
+                    "surface-bright": "#fbf9f6",
+                    "on-tertiary-fixed-variant": "#474747",
+                    "tertiary-fixed-dim": "#c8c6c6",
+                    "on-tertiary-container": "#fffcfb",
+                    "on-surface-variant": "#544340",
+                    "surface-variant": "#e4e2df",
+                    "on-primary-fixed-variant": "#763226",
+                    "primary-container": "#ae5e50",
+                    "on-secondary-fixed": "#161d1a",
+                    "tertiary-fixed": "#e4e2e1",
+                    "inverse-primary": "#ffb4a6",
+                    "surface-tint": "#93493b",
+                    "on-surface": "#1b1c1a",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#dbdad7",
+                    "secondary-fixed-dim": "#c1c8c3",
+                    "background": "#fbf9f6",
+                    "primary-fixed-dim": "#ffb4a6",
+                    "on-error": "#ffffff",
+                    "secondary": "#59605c",
+                    "inverse-surface": "#30312f",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#fbf9f6",
+                    "secondary-fixed": "#dde4de",
+                    "outline": "#87726f",
+                    "surface-container": "#efeeeb",
+                    "surface-container-low": "#f5f3f0",
+                    "on-primary-container": "#fffbff",
+                    "surface-container-highest": "#e4e2df"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-margin": "32px",
+                    "stack-lg": "64px",
+                    "gutter": "24px",
+                    "stack-md": "32px",
+                    "stack-sm": "16px",
+                    "unit": "8px"
+            },
+            "fontFamily": {
+                    "caption": ["Be Vietnam Pro"],
+                    "display-lg": ["EB Garamond"],
+                    "body-lg": ["Be Vietnam Pro"],
+                    "headline-md": ["EB Garamond"],
+                    "display-lg-mobile": ["EB Garamond"],
+                    "headline-sm": ["EB Garamond"],
+                    "body-md": ["Be Vietnam Pro"],
+                    "label-md": ["Be Vietnam Pro"]
+            },
+            "fontSize": {
+                    "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-md": ["32px", {"lineHeight": "40px", "fontWeight": "500"}],
+                    "display-lg-mobile": ["36px", {"lineHeight": "42px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                    "headline-sm": ["24px", {"lineHeight": "32px", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .organic-shape {
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        }
+        .rough-edge {
+            border: 1px solid #e8efe9;
+            box-shadow: 2px 2px 0px 0px #e8efe9;
+        }
+        @keyframes pulse-gentle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.9); }
+        }
+        .animate-pulse-gentle {
+            animation: pulse-gentle 3s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden h-screen flex">
+<!-- SideNavBar Component -->
+<aside class="hidden md:flex flex-col h-full w-80 bg-surface-container-low border-r border-outline-variant p-stack-sm overflow-y-auto shrink-0">
+<!-- Brand Header -->
+<div class="mb-stack-md flex flex-col items-center text-center">
+<div class="w-16 h-16 organic-shape bg-primary/10 flex items-center justify-center mb-4 overflow-hidden">
+<img class="w-10 h-10 object-contain" data-alt="A minimalist, hand-drawn vector illustration of a single terracotta-colored leaf with soft, organic linework on a cream background. The style is serene, humanistic, and evocative of peace and digital sanctuary, following a premium mental wellness aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQY_GSE4_mVilWsvM9XIyTVBkeDrSxPibyX7Lqk2F22p04HkG0vXBqWM9FZRx6I60X_0Hg8OsbIAhfMrz6BGhWRZFl-QBI6b5Tl_l9-t_EkeWkenCe_BHwWC7g0ftn-dWeHAtsyh0-wrJWp8aQXjQD3czsoI9j5eOyhYlXkdoe4lz06vOAEDYDmGxJyHaGFH_KHh5yRiANIMEuxCoG2Q-6S7IxDbLiQ8HCuMbUXvuoaSdnxoN_nmY5DA"/>
+</div>
+<h1 class="font-display-lg text-display-lg text-primary">Jeeva</h1>
+<p class="font-label-md text-label-md text-secondary">Your Digital Sanctuary</p>
+</div>
+<!-- Navigation Tabs -->
+<nav class="space-y-unit mb-stack-md">
+<a class="flex items-center gap-3 px-4 py-3 text-primary font-bold bg-secondary-container rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="spa">spa</span>
+<span class="font-label-md text-label-md">Sanctuary</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:text-primary hover:bg-surface-container-high transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+<span class="font-label-md text-label-md">Journal</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:text-primary hover:bg-surface-container-high transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="support_agent">support_agent</span>
+<span class="font-label-md text-label-md">Resources</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:text-primary hover:bg-surface-container-high transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="equalizer">equalizer</span>
+<span class="font-label-md text-label-md">Stats</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:text-primary hover:bg-surface-container-high transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</nav>
+<!-- Session Stats -->
+<div class="mb-stack-md p-4 bg-surface rounded-2xl border border-outline-variant/30 space-y-3">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Today's Pulse</h3>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="timer">timer</span>
+<span class="font-body-md text-body-md">Self-Care Session: 12 mins active</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="favorite">favorite</span>
+<span class="font-body-md text-body-md">Feelings Shared: 4</span>
+</div>
+</div>
+<!-- Mood Check-in Widget -->
+<div class="mb-stack-md p-4 bg-secondary-fixed/50 rounded-2xl space-y-3">
+<p class="font-label-md text-label-md text-on-secondary-container">Checking in: How is your mind today?</p>
+<div class="flex flex-wrap gap-2">
+<button class="px-3 py-1 bg-surface-container-lowest text-secondary text-sm rounded-full border border-secondary-container hover:bg-primary/10 hover:text-primary transition-all">🍃 Peaceful</button>
+<button class="px-3 py-1 bg-surface-container-lowest text-secondary text-sm rounded-full border border-secondary-container hover:bg-primary/10 hover:text-primary transition-all">🌊 Calm</button>
+<button class="px-3 py-1 bg-secondary-container text-on-secondary-container text-sm rounded-full border border-outline-variant">☁️ Heavy</button>
+<button class="px-3 py-1 bg-surface-container-lowest text-secondary text-sm rounded-full border border-secondary-container hover:bg-primary/10 hover:text-primary transition-all">⚡ Restless</button>
+<button class="px-3 py-1 bg-surface-container-lowest text-secondary text-sm rounded-full border border-secondary-container hover:bg-primary/10 hover:text-primary transition-all">☀️ Bright</button>
+</div>
+</div>
+<!-- Self-Care Checklist -->
+<div class="mb-stack-md px-2 space-y-2">
+<div class="flex items-center gap-2 group cursor-pointer">
+<div class="w-5 h-5 rounded border border-outline flex items-center justify-center text-[10px] text-primary transition-all group-hover:bg-primary/5">X</div>
+<span class="text-secondary font-label-md group-hover:text-on-surface">Deep breathing exercise</span>
+</div>
+<div class="flex items-center gap-2 group cursor-pointer">
+<div class="w-5 h-5 rounded border border-outline flex items-center justify-center text-[10px] text-primary"></div>
+<span class="text-secondary font-label-md group-hover:text-on-surface">Hydrate mindfully</span>
+</div>
+</div>
+<!-- Crisis Panel -->
+<div class="mt-auto space-y-stack-sm">
+<div class="p-4 bg-error-container/20 rounded-2xl border border-error-container">
+<h4 class="font-label-md text-error mb-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="emergency">emergency</span>
+                    Immediate Support
+                </h4>
+<ul class="text-[13px] space-y-1 text-on-error-container/80">
+<li class="flex justify-between"><span>India: iCall</span> <span class="font-bold">9152987821</span></li>
+<li class="flex justify-between"><span>US/Canada</span> <span class="font-bold">988</span></li>
+<li class="flex justify-between"><span>Samaritans</span> <span class="font-bold">116 123</span></li>
+</ul>
+</div>
+<button class="w-full py-4 bg-primary text-on-primary font-label-md rounded-full shadow-sm hover:scale-[0.98] transition-transform flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-lg" data-icon="refresh">refresh</span>
+                Reset Session
+            </button>
+</div>
+</aside>
+<!-- Main Dashboard Area -->
+<main class="flex-1 flex flex-col relative overflow-hidden bg-background">
+<!-- Status Header (TopAppBar) -->
+<header class="flex justify-between items-center w-full px-container-margin py-unit bg-surface border-b border-outline-variant shrink-0">
+<div class="flex items-center gap-4">
+<div class="relative">
+<div class="w-10 h-10 organic-shape bg-secondary-container flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A soft-focus, abstract portrait of a calming human presence in sage and terracotta tones, styled like a watercolor painting with organic textures. The lighting is warm and diffused, creating a serene and safe atmosphere for a mental wellness application's AI avatar." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDw7QYcLw-ZhGPjL6vJxqw6IlJAWITbEd7K3XCo8z5xZWsDT4qxaupR24iR7u1zBcshWshCoWRp4j-slYFKUcQDiUz1fD5ZCjbbS-cvKnzOFuCWVSVKGOjazck4qkuODqxBW8kup5CufVngKIznxVWPE9Vp5RaJKWmGeoWG44E3GeK6ro5RMa3_RBE8Nynts8bSnic_JqYvrpVhUZPJbkyWYxNR-na57zwa19cx14Xh-aeXMVst7WV-OA"/>
+</div>
+<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-surface rounded-full animate-pulse-gentle"></div>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-primary">Jeeva • <span class="text-secondary font-normal italic">Sitting with you</span></h2>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-secondary hover:bg-surface-container-low rounded-full transition-all">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-secondary hover:bg-surface-container-low rounded-full transition-all">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="flex-1 overflow-y-auto px-container-margin py-stack-sm custom-scrollbar flex flex-col gap-stack-sm max-w-4xl mx-auto w-full">
+<!-- Privacy Banner -->
+<div class="bg-primary-fixed text-on-primary-fixed-variant p-6 rounded-[32px] flex items-center gap-6 relative overflow-hidden group">
+<div class="relative z-10">
+<h3 class="font-headline-sm text-headline-sm mb-1">Your space, your rules.</h3>
+<p class="text-body-md opacity-90">Every word shared here is anchored in total anonymity. We do not store your identity, only your progress toward peace. You are safe to be seen as you are.</p>
+</div>
+<div class="hidden md:block shrink-0 relative z-10">
+<span class="material-symbols-outlined text-[64px] opacity-20" data-icon="shield_lock">shield_lock</span>
+</div>
+<div class="absolute -right-10 -bottom-10 w-40 h-40 bg-on-primary-fixed/5 organic-shape group-hover:scale-125 transition-transform duration-1000"></div>
+</div>
+<!-- Chat Area -->
+<div class="flex flex-col gap-6 mb-stack-lg">
+<!-- User Message -->
+<div class="flex justify-end items-end gap-3 group">
+<div class="max-w-[80%] bg-surface-container-highest p-5 rounded-[24px] rounded-br-none rough-edge transition-all">
+<p class="text-on-surface">I feel a bit lost today.</p>
+</div>
+<div class="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center text-xs text-on-secondary-fixed font-bold">ME</div>
+</div>
+<!-- Jeeva Response -->
+<div class="flex justify-start items-start gap-3 group">
+<div class="w-8 h-8 organic-shape bg-secondary-container flex items-center justify-center overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="Small, simplified version of the Jeeva AI avatar, a soft-focused watercolor texture in green and terracotta tones, presented in a hand-drawn organic shape." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCurhPkDhZwxbyxMQLgheyl4Nsdu6tTk8Ny9AA6MSJae5j0eDDOhexuS6SOBVJJH6pPi3fGkg_BPeWJ2GUU6A--eMqu3pvqqWtH_LQm6WFqf-EpQpLsTPcwCy9fN2L4dtG-VKw3WUOIg1QcK2NAsn1m_dQ2JQDD43y3itiDxHnpRaEqAMNeYNei2YTp2X6lQRZRHvYiGHdynTMIDMjqmcRAuiHegSLzIAix3M2X0DpEyvqxq8KE0TP_Q"/>
+</div>
+<div class="max-w-[85%] space-y-4">
+<div class="bg-secondary-container/60 p-6 rounded-[28px] rounded-tl-none border-l-4 border-primary/20 backdrop-blur-sm transition-all hover:bg-secondary-container/80">
+<p class="text-on-secondary-container leading-relaxed mb-4">I hear you. It's okay to feel that way. Being 'lost' is often just the beginning of finding a new path. Would you like to try a grounding exercise together?</p>
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-surface-container-low rounded-full border border-outline-variant/30">
+<span class="text-sm font-label-md text-secondary">Primary mood detected: Anxiety ☁️</span>
+</div>
+</div>
+<!-- Action Suggestions -->
+<div class="flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-2 duration-700">
+<button class="px-4 py-2 bg-primary text-on-primary rounded-full font-label-md hover:brightness-110 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="psychology">psychology</span>
+                                Try grounding exercise
+                            </button>
+<button class="px-4 py-2 bg-secondary-container text-on-secondary-container rounded-full font-label-md border border-outline-variant hover:bg-secondary-fixed transition-all">
+                                I feel overwhelmed
+                            </button>
+<button class="px-4 py-2 bg-secondary-container text-on-secondary-container rounded-full font-label-md border border-outline-variant hover:bg-secondary-fixed transition-all">
+                                Tell me more about this
+                            </button>
+</div>
+</div>
+</div>
+<!-- Crisis Context Bubble (Conditional UI) -->
+<div class="mx-auto max-w-lg w-full p-6 bg-error-container/30 border border-error-container rounded-[32px] text-center space-y-3 mt-4">
+<p class="font-headline-sm text-headline-sm text-on-error-container">You're not alone.</p>
+<p class="text-body-md text-on-error-container/80">If these feelings become too heavy, please reach out to someone who can help immediately.</p>
+<div class="grid grid-cols-2 gap-2 mt-4">
+<div class="bg-surface/50 p-3 rounded-2xl">
+<p class="text-caption text-secondary uppercase tracking-widest">iCall India</p>
+<p class="font-bold text-primary">9152987821</p>
+</div>
+<div class="bg-surface/50 p-3 rounded-2xl">
+<p class="text-caption text-secondary uppercase tracking-widest">US/Canada</p>
+<p class="font-bold text-primary">988</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Sticky Input Area -->
+<div class="p-container-margin bg-gradient-to-t from-background via-background to-transparent pt-stack-sm shrink-0">
+<div class="max-w-4xl mx-auto w-full relative group">
+<div class="absolute -inset-1 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-[32px] blur opacity-25 group-focus-within:opacity-50 transition-opacity"></div>
+<div class="relative flex items-center gap-3 bg-surface border border-outline-variant p-2 rounded-[32px] shadow-sm ring-inset focus-within:ring-2 ring-primary/20 transition-all">
+<div class="flex-1 px-4">
+<textarea class="w-full bg-transparent border-none focus:ring-0 text-body-lg resize-none py-3 h-auto max-h-40 font-display-lg" placeholder="Write from the heart..." rows="1" style="min-height: 2.5rem;"></textarea>
+</div>
+<button class="w-12 h-12 flex items-center justify-center bg-primary text-on-primary rounded-full transition-transform active:scale-90 hover:scale-105">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</div>
+<div class="flex justify-center mt-2 gap-4">
+<span class="text-caption text-secondary/60 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="ink_pen">ink_pen</span> Notebook mode active
+                    </span>
+<span class="text-caption text-secondary/60">•</span>
+<span class="text-caption text-secondary/60 italic">Your privacy is our priority</span>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<footer class="w-full py-stack-sm px-container-margin text-center bg-surface-container-lowest border-t border-outline-variant shrink-0">
+<div class="max-w-4xl mx-auto space-y-2">
+<p class="font-caption text-caption text-tertiary opacity-70">Medical Disclaimer: Jeeva is an emotional support tool, not a replacement for professional clinical care. If you are in crisis, please contact emergency services immediately.</p>
+<div class="flex justify-center gap-6">
+<a class="font-label-md text-label-md text-tertiary hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="font-label-md text-label-md text-tertiary hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-label-md text-label-md text-tertiary hover:text-primary transition-colors" href="#">Crisis Resources</a>
+</div>
+</div>
+</footer>
+</main>
+<script>
+        // Micro-interaction for the textarea to grow
+        const textarea = document.querySelector('textarea');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        // Simple ambient pulse for the avatar
+        setInterval(() => {
+            const avatar = document.querySelector('.organic-shape');
+            if(avatar) {
+                avatar.style.borderRadius = `${60 + Math.random()*5}% ${40 + Math.random()*5}% ${30 + Math.random()*5}% ${70 + Math.random()*5}% / ${60 + Math.random()*5}% ${30 + Math.random()*5}% ${70 + Math.random()*5}% ${40 + Math.random()*5}%`;
+                avatar.style.transition = 'border-radius 3s ease-in-out';
+            }
+        }, 3000);
+    </script>
+</body></html>

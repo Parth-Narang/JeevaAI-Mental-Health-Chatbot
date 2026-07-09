@@ -1,0 +1,22 @@
+# Core Web App
+streamlit==1.31.1
+python-dotenv==1.0.0
+# Google Gemini API
+google-generativeai==0.3.2
+
+# Data handling
+pandas==2.2.1
+numpy==1.26.4
+
+# Sentiment Analysis & NLP
+scikit-learn==1.4.1.post1
+nltk==3.8.1
+
+# Optional: If you're doing embeddings or saving vector data
+sentence-transformers==2.6.1
+
+# Serialization
+joblib==1.4.0
+
+# For vector similarity and saving/loading database
+pickle-mixin==1.0.2
