@@ -1,0 +1,429 @@
+﻿================================================================================
+  JEEVA AI - LAYOUT WHITESPACE FIX NOTES
+  File: main_f.py  |  Streamlit Version: 1.58.0
+  Last Updated: 2026-07-09
+================================================================================
+
+------------------------------------------------------------------------
+TABLE OF CONTENTS
+------------------------------------------------------------------------
+  1. Original Problems Reported
+  2. Investigation & Root Cause Analysis
+  3. Streamlit Internal Architecture (Discovered via JS Bundle)
+  4. Changes Made - Round 1 (Whitespace Fix)
+  5. Changes Made - Round 2 (Auto-Scroll Fix)
+  6. Verification Results
+  7. Streamlit Official Position & Limitations
+  8. Files Modified
+  9. Rejected Approaches & Why
+  10. Known Remaining Issues & Technical Debt
+  11. References
+
+
+------------------------------------------------------------------------
+1. ORIGINAL PROBLEMS REPORTED
+------------------------------------------------------------------------
+
+Three issues were identified on the Sanctuary (chat) tab:
+
+  A. Large blank space ABOVE the custom Jeeva header (~96px gap).
+  B. Blank area BELOW the chat input box at the bottom.
+  C. Page auto-scrolls downward every time the site is opened or reloaded.
+
+Issue C was reported separately after the initial whitespace investigation.
+
+
+------------------------------------------------------------------------
+2. INVESTIGATION & ROOT CAUSE ANALYSIS
+------------------------------------------------------------------------
+
+STEP 1 - Live screenshots taken (http://localhost:8501)
+  Confirmed all three issues visually before touching any code.
+
+STEP 2 - Streamlit version confirmed
+  Command: python -c "import streamlit; print(streamlit.__version__)"
+  Result:  Streamlit 1.58.0
+
+STEP 3 - Streamlit JS bundle inspected
+  File: C:\Users\parth\AppData\Local\Programs\Python\Python313\Lib\
+        site-packages\streamlit\static\static\js\index.dkY5s53S.js
+  Size: ~2.3 MB
+
+  Streamlit uses Emotion (CSS-in-JS) - styles are NOT in .css files.
+  They are computed in JavaScript at runtime and injected as <style> tags.
+  This means grep/search on .css files finds nothing useful.
+
+
+ROOT CAUSE A - Top Whitespace (6rem / 96px gap above Jeeva header)
+  Found the styled-component "zke" which renders stMainBlockContainer.
+  Its padding-top logic (extracted from the bundle):
+
+      paddingTop = hasTopNav ? "8rem" : "6rem";
+      // For a standard app with no top nav: ALWAYS 6rem (96px)
+
+  This 6rem padding is injected onto:
+      [data-testid="stMainBlockContainer"]   <-- authoritative selector
+      class="stMainBlockContainer block-container"  <-- alias
+
+  CRITICAL: The Streamlit native header [data-testid="stHeader"] is
+  position:absolute (from component "xDe") with height: 3.75rem (60px).
+  It does NOT take flex-layout space. The 6rem padding exists to prevent
+  content from hiding behind the floating header.
+
+  Hiding stHeader with "display: none" does NOT reduce this padding.
+  Streamlit always injects 6rem regardless.
+
+  The previous CSS only targeted:
+      .stApp, .stMain, .block-container, [data-testid="stAppViewBlockContainer"]
+
+  It MISSED [data-testid="stMainBlockContainer"] - the actual element
+  that carries the Emotion-injected padding-top: 6rem. Because Emotion
+  styles are injected with higher specificity, the !important on
+  .block-container alone was insufficient.
+
+
+ROOT CAUSE B - Bottom Whitespace (gap below chat input)
+  The footer block (Medical Disclaimer + Terms/Privacy/Crisis buttons)
+  was rendered UNCONDITIONALLY at the end of main() - outside all
+  if/elif tab blocks.
+
+  On the Sanctuary tab, this injected real DOM content below the
+  scrollable chat area. The page scroll-lock did not prevent this
+  content from being laid out. It appeared as a visible gap between
+  the bottom of the chat history and the fixed chat input.
+
+  Important: hiding with CSS would NOT fix this - the DOM content
+  still occupies layout space even if invisible. The fix must remove
+  the actual DOM nodes on the Sanctuary tab.
+
+
+ROOT CAUSE C - Auto-Scroll on Page Load
+  The setupScrolling() function in the components.html() JavaScript
+  block (main_f.py, ~line 1718) ended with:
+
+      // Initial scroll to show latest history on entry
+      scrollToBottom();
+
+  This fired scrollToBottom() immediately on every:
+    - Page first load
+    - Hard refresh
+    - Any Streamlit rerun (button clicks, input changes, etc.)
+
+  The smooth scroll animation (behavior: 'smooth') made the downward
+  jump visually jarring. Since Streamlit reruns the entire script on
+  every interaction, this scroll fired constantly.
+
+
+------------------------------------------------------------------------
+3. STREAMLIT INTERNAL ARCHITECTURE (Discovered via JS Bundle)
+------------------------------------------------------------------------
+
+  The layout DOM tree in Streamlit 1.58.0 is:
+
+    stAppViewContainer [data-testid="stAppViewContainer"]
+      ├── Sidebar (conditional, data-testid="stSidebar")
+      └── Gke wrapper  (height: 100dvh, flex column)
+           ├── DDe → [data-testid="stHeader"]    (position: absolute, height: 3.75rem)
+           └── stMain [data-testid="stMain"]      (flex-grow, stAppScrollToBottomContainer)
+                └── [data-testid="stMainBlockContainer"]  (padding-top: 6rem DEFAULT)
+                     └── Tab content / vertical blocks
+                └── [data-testid="stBottom"]       (position: fixed, bottom: 0)
+                     └── stBottomBlockContainer → st.chat_input()
+
+  Key architectural facts:
+  - stHeader is position:absolute. It does NOT push stMain down.
+  - The 6rem padding-top on stMainBlockContainer is the ONLY spacer.
+  - stBottom (chat input) is already position:fixed by Streamlit itself.
+  - Emotion-injected styles have inline-level specificity. They require
+    !important in injected CSS to be overridden.
+
+
+------------------------------------------------------------------------
+4. CHANGES MADE - ROUND 1 (Whitespace Fix)
+------------------------------------------------------------------------
+
+FILE: main_f.py
+DATE: 2026-07-09
+
+CHANGE 1 - inject_custom_css(): viewport_style for Sanctuary tab
+  Location: lines ~311-355 (inside if active_tab == "Sanctuary" branch)
+
+  Added the correct authoritative selector to zero out padding-top:
+
+      [data-testid="stMainBlockContainer"],
+      .stMainBlockContainer,
+      .block-container {
+          padding-top: 0px !important;
+          padding-bottom: 0px !important;
+      }
+
+  Also applied scroll-lock to the correct elements:
+
+      .stApp, .stMain, section.main {
+          overflow: hidden !important;
+          height: 100dvh !important;
+          margin: 0 !important;
+      }
+      [data-testid="stMainBlockContainer"], .block-container {
+          overflow: hidden !important;
+          height: 100dvh !important;
+          margin: 0 !important;
+      }
+
+  Chat history container (scrollable inner area):
+
+      .st-key-chat_history_container,
+      .st-key-chat_history_container > div,
+      .st-key-chat_history_container [data-testid="stVerticalBlock"] {
+          height: calc(100dvh - var(--header-height, 60px) - var(--input-height, 95px));
+          overflow-y: auto !important;
+          padding: var(--spacing-sm) var(--spacing-md) !important;
+      }
+
+  Note: 100dvh (dynamic viewport height) is used instead of 100vh so
+  the layout correctly handles mobile on-screen keyboards.
+
+
+CHANGE 2 - inject_custom_css(): viewport_style for non-Sanctuary tabs
+  Location: lines ~338-354 (inside else branch)
+
+  Also added the correct selector for other tabs:
+
+      [data-testid="stMainBlockContainer"],
+      .stMainBlockContainer,
+      .block-container {
+          padding-top: calc(var(--header-height, 60px) + 20px) !important;
+          padding-bottom: calc(var(--input-height, 80px) + 20px) !important;
+      }
+
+  This zeroes the Streamlit default then adds back appropriate spacing
+  to account for the fixed Jeeva header.
+
+
+CHANGE 3 - main(): Footer made conditional on active tab
+  Location: lines ~1577-1597
+
+  Changed from always rendering the footer to:
+
+      if active_tab != "Sanctuary":
+          st.markdown("""..Medical Disclaimer...""")
+          with st.container(horizontal=True, key="footer_links"):
+              ...Terms / Privacy / Crisis buttons...
+
+  The footer now only renders on: Journal, Resources, Stats, Settings,
+  Terms, Privacy, Crisis tabs.
+
+  REASON: CSS visibility tricks were rejected because hidden DOM content
+  still occupies layout space. Removing the DOM nodes entirely is the
+  only correct fix.
+
+
+------------------------------------------------------------------------
+5. CHANGES MADE - ROUND 2 (Auto-Scroll Fix)
+------------------------------------------------------------------------
+
+FILE: main_f.py
+DATE: 2026-07-09
+
+CHANGE 4 - JavaScript: Removed initial scrollToBottom() on page load
+  Location: ~line 1718 (inside setupScrolling() function in
+            components.html() block at the bottom of main())
+
+  BEFORE:
+      // Initial scroll to show latest history on entry
+      scrollToBottom();
+
+  AFTER (replaced with comment explaining intent):
+      // Note: No initial scrollToBottom() here - we let the chat
+      // history container render naturally. The MutationObserver
+      // handles auto-scroll only when new messages are added.
+
+  WHAT IS PRESERVED:
+  - MutationObserver still fires scrollToBottom() when new message
+    nodes are added to the chat container DOM.
+  - When user sends a message or assistant responds, auto-scroll works.
+  - The userIsScrolling flag still respects manual scroll-up position.
+
+  WHAT IS REMOVED:
+  - The jarring downward scroll animation on every page load and rerun.
+
+  REASON: Streamlit reruns the entire Python script on every interaction.
+  Each rerun reinjects the components.html() JavaScript, which re-ran
+  init() and called scrollToBottom() immediately. This caused the page
+  to scroll down on every button click, message send, and app open.
+
+
+------------------------------------------------------------------------
+6. VERIFICATION RESULTS
+------------------------------------------------------------------------
+
+Post-change screenshots taken and reviewed (2026-07-09):
+
+  Sanctuary tab - sidebar closed:
+    Header: Visible with "Jeeva - Sitting with you" text.
+    Footer: NOT rendered (Medical Disclaimer absent). CORRECT.
+    Chat input: Fixed at bottom. CORRECT.
+    Auto-scroll: No longer fires on page load. CORRECT.
+
+  Sanctuary tab - sidebar open:
+    Header: Shifts right (left: var(--sidebar-width)) as expected.
+    Sidebar: Full navigation visible.
+    Chat input: Still visible at bottom.
+
+  Journal tab:
+    Header: Fixed at top.
+    Footer (Medical Disclaimer + links): Visible. CORRECT.
+    Content scrolls normally.
+
+  REMAINING OPEN QUESTION (not yet fully resolved):
+    On some screenshots, there appears to be a small top gap (~140px)
+    above the Jeeva header. Investigation is ongoing. This may be:
+    a) A stale cache / app not yet reloaded between screenshots.
+    b) The scroll position of the stMain container showing padding.
+    c) A remaining CSS specificity issue.
+    Full resolution pending a hard reload + fresh screenshot session.
+    See Section 10 (Known Remaining Issues) for details.
+
+
+------------------------------------------------------------------------
+7. STREAMLIT OFFICIAL POSITION & LIMITATIONS
+------------------------------------------------------------------------
+
+  Streamlit does NOT officially support removing the default header
+  reserved space. There is no config.toml option or Python API for it.
+
+  The only officially available approach is CSS injection via:
+      st.markdown("<style>...</style>", unsafe_allow_html=True)
+  targeting data-testid attributes.
+
+  Community-confirmed working selector (Streamlit 1.33+):
+      [data-testid="stMainBlockContainer"] { padding-top: 0 !important; }
+
+  Relevant config.toml options (do not eliminate the space, but reduce
+  the toolbar which reduces the 6rem reason):
+      [client]
+      toolbarMode = "minimal"
+
+  data-testid selectors are more stable than emotion-cache class names
+  (e.g., st-emotion-cache-xxxxxx) which change every Streamlit release.
+  However, data-testid selectors are still not guaranteed across major
+  Streamlit version upgrades.
+
+
+------------------------------------------------------------------------
+8. FILES MODIFIED
+------------------------------------------------------------------------
+
+  main_f.py (only file changed):
+    - inject_custom_css() function
+        - viewport_style variable: Sanctuary tab branch
+        - viewport_style variable: non-Sanctuary tab branch
+    - main() function
+        - Footer section: wrapped in "if active_tab != 'Sanctuary'"
+        - components.html() JavaScript: removed scrollToBottom() on init
+
+  streamlit_app.py  - NOT modified
+  database.py       - NOT modified
+  gemini.py         - NOT modified
+  requirements.txt  - NOT modified
+  .env              - NOT modified
+
+
+------------------------------------------------------------------------
+9. REJECTED APPROACHES & WHY
+------------------------------------------------------------------------
+
+  REJECTED: Negative margin-top on stMainBlockContainer
+    Reason: Masks the symptom without fixing the cause. Fragile.
+
+  REJECTED: CSS "visibility: hidden" on footer
+    Reason: Hidden DOM content still occupies layout space in CSS.
+            Only removing the DOM node eliminates the gap.
+
+  REJECTED: position:relative + top: -96px on block container
+    Reason: Causes content clipping and overlap with the sidebar.
+
+  REJECTED: Targeting .st-emotion-cache-xxxxx auto-generated classes
+    Reason: These class names are regenerated on every Streamlit build.
+            They break silently after upgrades with no error message.
+
+  REJECTED: Replacing st.chat_input() with a custom HTML text box
+    Reason: Explicitly prohibited by user requirement. The existing
+            Streamlit chat input must be preserved as-is.
+
+  REJECTED: Setting height: 0 on stHeader via CSS
+    Reason: stHeader is already position:absolute with pointer-events:none
+            when transparent. Zero height breaks the internal toolbar.
+
+  REJECTED: Injecting config.toml toolbarMode = "minimal"
+    Reason: Does not remove the 6rem padding - only hides toolbar icons.
+            The padding-top is computed independently of toolbar content.
+
+
+------------------------------------------------------------------------
+10. KNOWN REMAINING ISSUES & TECHNICAL DEBT
+------------------------------------------------------------------------
+
+  ISSUE 1 - Possible residual top gap (under investigation)
+    Some screenshots show ~140px gap above the Jeeva header even after
+    the padding-top fix. Cause not yet fully confirmed:
+      - May be stale app state (not yet reloaded since code change).
+      - May be the chat history container's inner scroll position.
+      - The stHeader (position:absolute) itself has height 3.75rem
+        (60px). Even with display:none, if any other rule restores its
+        height contribution, a gap could reappear.
+    Status: Monitoring. Hard-reload verification pending.
+
+  ISSUE 2 - Sidebar width CSS variable timing
+    The --sidebar-width CSS variable is set by ResizeObserver in JS.
+    On first render, it defaults to 0px so the header left edge starts
+    at x=0 even when sidebar is open. The header snaps to the correct
+    position ~500ms after load (after the JS runs).
+    This causes a brief layout shift on initial page load.
+    Potential fix: Set initial --sidebar-width via Python before render.
+
+  ISSUE 3 - Streamlit rerun re-injects JavaScript
+    components.html() is re-executed on every Streamlit rerun.
+    The current init() function re-runs ResizeObserver setup each time,
+    creating potentially multiple observer instances.
+    Impact: Minor performance concern, no visible UI issue.
+    Fix: Could scope the init with a sentinel (window.__jeevaInitDone).
+
+  ISSUE 4 - st.container(height=500) hardcoded height on chat area
+    The chat history container uses height=500 as a placeholder.
+    The CSS overrides this with calc(100dvh - header - input) but the
+    Streamlit-generated HTML may still include the fixed-height styling.
+    This could conflict on certain viewport sizes.
+
+  ISSUE 5 - CSS selectors may break on Streamlit upgrade
+    data-testid attributes are more stable than emotion class names,
+    but Streamlit makes no guarantee they will never change.
+    After any Streamlit upgrade, layout should be re-verified.
+
+
+------------------------------------------------------------------------
+11. REFERENCES
+------------------------------------------------------------------------
+
+  Streamlit Docs - set_page_config:
+    https://docs.streamlit.io/develop/api-reference/configuration/st.set_page_config
+
+  Streamlit Community - Remove top padding:
+    https://discuss.streamlit.io (multiple threads on padding-top: 6rem)
+
+  Community-confirmed fix (stMainBlockContainer selector):
+    Search: "Streamlit stMainBlockContainer padding-top remove"
+
+  Streamlit JS bundle inspected:
+    C:\Users\parth\AppData\Local\Programs\Python\Python313\Lib\
+    site-packages\streamlit\static\static\js\index.dkY5s53S.js
+    Key components: zke (stMainBlockContainer), xDe (stHeader),
+                    DDe (header toolbar), Gke (outer flex wrapper)
+
+  Emotion CSS-in-JS (used internally by Streamlit):
+    https://emotion.sh/docs/introduction
+
+
+------------------------------------------------------------------------
+END OF NOTES
+------------------------------------------------------------------------

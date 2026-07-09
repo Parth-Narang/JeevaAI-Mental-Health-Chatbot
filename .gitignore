@@ -1,5 +1,24 @@
+# Python
 .venv/
-.env
 __pycache__/
 *.pyc
+*.pyo
+
+# Secrets — never commit these
+.env
+.streamlit/secrets.toml
+
+# Local HuggingFace model cache — sentence-transformers downloads at runtime
+models/
+
+# Editor and OS artifacts
 .gemini/
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+
+# Stale / dev-only files not needed for deployment
+import os.py
+main.py
+stitch_jeeva_empathetic_wellness_platform/

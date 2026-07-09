@@ -267,7 +267,7 @@ def markdown_to_html(text):
     return text
 
 # --- Custom CSS Injection with Theme Customization ---
-def inject_custom_css(theme, font_scale="Spacious"):
+def inject_custom_css(theme, font_scale="Spacious", active_tab="Sanctuary"):
     if theme == "Sage Meadow":
         bg = "#e8efe9"
         text = "#2c3531"
@@ -308,6 +308,72 @@ def inject_custom_css(theme, font_scale="Spacious"):
         line_height = "1.8"
         font_size_msg = "16px"
 
+    # Tab-specific viewport scroll-locking style definitions.
+    # IMPORTANT: Streamlit 1.58 computes padding-top: 6rem on [data-testid="stMainBlockContainer"]
+    # via Emotion CSS-in-JS (JS bundle zke component). This is SEPARATE from the .block-container
+    # class alias and must be zeroed out via its data-testid selector to remove the top whitespace.
+    # See: JS bundle index.dkY5s53S.js — zke styled-component, line ~2234105.
+    if active_tab == "Sanctuary":
+        viewport_style = f"""
+        /* Zero out Streamlit's hardcoded 6rem padding-top on the main block container.
+           This is the PRIMARY cause of top whitespace. The Emotion-generated style on
+           [data-testid="stMainBlockContainer"] is the authoritative source; .block-container
+           is a secondary alias that also needs to be zeroed. */
+        [data-testid="stMainBlockContainer"],
+        .stMainBlockContainer,
+        .block-container {{
+            padding-top: 0px !important;
+            padding-bottom: 0px !important;
+        }}
+        /* Lock the page height so only the chat area scrolls */
+        .stApp,
+        .stMain,
+        section.main {{
+            overflow: hidden !important;
+            height: 100dvh !important;
+            max-height: 100dvh !important;
+            margin: 0 !important;
+        }}
+        [data-testid="stMainBlockContainer"],
+        .block-container {{
+            overflow: hidden !important;
+            height: 100dvh !important;
+            max-height: 100dvh !important;
+            margin: 0 !important;
+        }}
+        /* Scrollable chat history container */
+        .st-key-chat_history_container,
+        .st-key-chat_history_container > div,
+        .st-key-chat_history_container [data-testid="stVerticalBlock"] {{
+            height: calc(100dvh - var(--header-height, 60px) - var(--input-height, 95px)) !important;
+            max-height: calc(100dvh - var(--header-height, 60px) - var(--input-height, 95px)) !important;
+            overflow-y: auto !important;
+            background-color: var(--background-color, {bg}) !important;
+            border: none !important;
+            padding: var(--spacing-sm) var(--spacing-md) !important;
+            box-shadow: none !important;
+        }}
+        """
+    else:
+        viewport_style = f"""
+        /* For non-Sanctuary tabs: zero out Streamlit's 6rem default, then add back
+           space to account for the fixed Jeeva header at the top. */
+        [data-testid="stMainBlockContainer"],
+        .stMainBlockContainer,
+        .block-container {{
+            padding-top: calc(var(--header-height, 60px) + 20px) !important;
+            padding-bottom: calc(var(--input-height, 80px) + 20px) !important;
+            max-width: 100% !important;
+            margin: 0 auto !important;
+            overflow: auto !important;
+            height: auto !important;
+        }}
+        .stApp {{
+            overflow: auto !important;
+            height: auto !important;
+        }}
+        """
+
     st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=EB+Garamond:wght@500;600;700&display=swap');
@@ -328,19 +394,53 @@ def inject_custom_css(theme, font_scale="Spacious"):
             --font-xl: clamp(24px, 2.5vw + 16px, 32px);
         }}
 
+        /* Viewport rules depending on tab focus */
+        {viewport_style}
+
         /* Global App Setup */
         .stApp {{
-            background-color: {bg} !important;
-            color: {text} !important;
+            background-color: var(--background-color, {bg}) !important;
+            color: var(--text-color, {text}) !important;
             font-family: 'Be Vietnam Pro', sans-serif !important;
         }}
-        .block-container, [data-testid="stAppViewBlockContainer"] {{
-            max-width: 100% !important; /* Fluid responsiveness */
-            margin: 0 auto !important; 
-            padding-top: 0.5rem !important;
-            padding-bottom: 1rem !important;
-            padding-left: var(--spacing-lg) !important;
-            padding-right: var(--spacing-lg) !important;
+
+        /* Completely collapse wrapper containers that only contain style blocks or script blocks */
+        div[data-testid="element-container"]:has(style), 
+        div[data-testid="element-container"]:has(script),
+        div.element-container:has(style), 
+        div.element-container:has(script) {{
+            display: none !important;
+            height: 0px !important;
+            min-height: 0px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }}
+
+        /* Ensure the layout footprint of the header's wrapper element matches the header height and allows overflow */
+        div[data-testid="element-container"]:has(.st-key-main_header) {{
+            margin: 0 !important;
+            padding: 0 !important;
+            height: var(--header-height, 60px) !important;
+            min-height: var(--header-height, 60px) !important;
+            display: block !important;
+            overflow: visible !important;
+        }}
+
+        /* Prevent parent CSS transform/perspective properties from breaking the fixed header positioning */
+        div[data-testid="element-container"]:has(.st-key-main_header),
+        div[data-testid="stVerticalBlock"] > div:has(.st-key-main_header),
+        .stVerticalBlockBorderWrapper:has(.st-key-main_header) {{
+            transform: none !important;
+            filter: none !important;
+            perspective: none !important;
+            clip-path: none !important;
+            overflow: visible !important;
+        }}
+
+        /* Collapse the first element's margin-top inside vertical blocks to start directly at the boundary */
+        [data-testid="stVerticalBlock"] > div:first-child {{
+            margin-top: 0px !important;
+            padding-top: 0px !important;
         }}
 
         /* Typography globally scaled */
@@ -497,18 +597,27 @@ def inject_custom_css(theme, font_scale="Spacious"):
             padding-bottom: var(--spacing-xl) !important;
         }}
 
-        /* Header Container */
+        /* Header Container - Fixed top bar alignment next to sidebar */
         .st-key-main_header {{
+            position: fixed !important;
+            top: 0 !important;
+            left: var(--sidebar-width, 0px) !important;
+            right: 0 !important;
+            z-index: 999990 !important;
+            background-color: var(--background-color, {bg}) !important;
             display: flex !important;
             flex-direction: row !important;
             flex-wrap: nowrap !important;
             align-items: center !important;
             justify-content: flex-start !important;
             gap: var(--spacing-md) !important;
-            padding: var(--spacing-sm) 0 !important;
-            border-bottom: 1px solid {outline} !important;
-            margin-bottom: var(--spacing-lg) !important;
+            padding: 10px 24px !important;
+            padding-top: calc(10px + env(safe-area-inset-top)) !important;
+            border-bottom: 1px solid var(--secondary-background-color, {outline}) !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+            margin: 0 !important;
             min-height: 44px !important;
+            transition: left 0.2s ease-in-out, background-color 0.15s ease !important;
         }}
         
         /* All element containers should center vertically */
@@ -554,11 +663,16 @@ def inject_custom_css(theme, font_scale="Spacious"):
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            color: {text} !important;
+            color: var(--text-color, {text}) !important;
             line-height: 1 !important;
+            transition: background-color 0.15s ease, transform 0.1s ease !important;
         }}
         .st-key-main_header .stButton>button:hover {{
-            background-color: {active_bg} !important;
+            background-color: var(--secondary-background-color, {active_bg}) !important;
+        }}
+        .st-key-main_header .stButton>button:focus-visible {{
+            outline: 2px solid var(--primary-color, {primary}) !important;
+            background-color: var(--secondary-background-color, {active_bg}) !important;
         }}
         
         /* Chat Inputs custom CSS */
@@ -599,20 +713,39 @@ def inject_custom_css(theme, font_scale="Spacious"):
             margin-bottom: var(--spacing-xs);
         }}
 
-        /* Remove aggressive padding on sticky bottom */
-        [data-testid="stBottom"], [data-testid="stBottomBlockContainer"] {{
+        /* Remove aggressive padding on sticky bottom and force to screen bottom edge */
+        [data-testid="stBottom"] {{
+            position: fixed !important;
+            bottom: 0px !important;
+            left: 0px !important;
+            right: 0px !important;
+            z-index: 999980 !important;
             background-color: {bg} !important;
-            padding-bottom: 15px !important;
-            padding-top: 10px !important;
+            padding-bottom: 0px !important;
+            padding-top: 0px !important;
+            margin: 0 !important;
+        }}
+        [data-testid="stBottomBlockContainer"] {{
+            background-color: {bg} !important;
+            padding-bottom: 5px !important;
+            padding-top: 5px !important;
             margin: 0 !important;
             height: auto !important;
         }}
         [data-testid="stBottom"] > div {{
             padding: 0 !important;
             padding-bottom: 0px !important;
+            padding-top: 0px !important;
             margin: 0 !important;
             height: auto !important;
             background-color: transparent !important;
+        }}
+        /* Collapse margins on the chat input forms themselves */
+        [data-testid="stChatInput"], 
+        [data-testid="stChatInput"] > div, 
+        [data-testid="stChatInput"] form {{
+            margin-bottom: 0px !important;
+            padding-bottom: 0px !important;
         }}
         
         /* Reduce the artificial empty space injected by Streamlit below content */
@@ -757,9 +890,18 @@ class MentalHealthChatbot:
 
     def initialize_chatbot(self):
         """Initialize and return the Gemini chatbot instance."""
-        API_KEY = os.getenv("GEMINI_API_KEY")
+        # On Streamlit Community Cloud, secrets are accessed via st.secrets.
+        # Locally, they come from the .env file via os.getenv().
+        # We check st.secrets first, then fall back to the environment variable.
+        API_KEY = None
+        try:
+            API_KEY = st.secrets.get("GEMINI_API_KEY")
+        except Exception:
+            pass  # st.secrets not available locally — that's fine
         if not API_KEY:
-            st.error("Gemini API key not found. Please set the GEMINI_API_KEY environment variable in your .env file.", icon="🚨")
+            API_KEY = os.getenv("GEMINI_API_KEY")
+        if not API_KEY:
+            st.error("Gemini API key not found. Add GEMINI_API_KEY to your .env file (local) or Streamlit Secrets (Cloud).", icon="🚨")
             st.stop()
 
         system_instruction = (
@@ -906,7 +1048,7 @@ def main():
         initial_sidebar_state=st.session_state.sidebar_state
     )
 
-    inject_custom_css(st.session_state.theme, st.session_state.font_scale)
+    inject_custom_css(st.session_state.theme, st.session_state.font_scale, st.session_state.active_tab)
 
     # --- Initialize Databases and Clients ---
     needs_init = 'sentiment_db' not in st.session_state or 'chatbot_instance' not in st.session_state
@@ -1068,68 +1210,69 @@ def main():
 
     # 1. SANCTUARY TAB (CHAT COMPONENT)
     if active_tab == "Sanctuary":
-        # Privacy Banner
-        st.markdown("""
-        <div class="privacy-banner" style="display: flex; align-items: center; gap: 20px; position: relative; overflow: hidden; margin-bottom: 24px; padding: 20px;">
-            <div style="position: relative; z-index: 10; flex: 1;">
-                <h3 style="font-family: 'EB Garamond', serif; font-size: 20px; font-weight: 500; margin: 0 0 4px 0;">Your space, your rules.</h3>
-                <p style="font-family: 'Be Vietnam Pro', sans-serif; font-size: 14px; margin: 0; opacity: 0.9; line-height: 1.5;">Every word shared here is anchored in total anonymity. We do not store your identity, only your progress toward peace. You are safe to be seen as you are.</p>
-            </div>
-            <div style="font-size: 48px; opacity: 0.15; flex-shrink: 0;">🛡️</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Render Chat logs
-        for message in st.session_state.messages:
-            if message["role"] == "user":
-                safe_msg = html.escape(message["content"])
-                st.markdown(f"""
-                <div class="chat-bubble-container user-chat-container">
-                    <div class="chat-bubble user-chat-bubble">
-                        <p class="chat-text user-chat-text">{safe_msg}</p>
-                    </div>
-                    <div class="chat-avatar user-chat-avatar">ME</div>
+        with st.container(key="chat_history_container", height=500):
+            # Privacy Banner
+            st.markdown("""
+            <div class="privacy-banner" style="display: flex; align-items: center; gap: 20px; position: relative; overflow: hidden; margin-bottom: 24px; padding: 20px;">
+                <div style="position: relative; z-index: 10; flex: 1;">
+                    <h3 style="font-family: 'EB Garamond', serif; font-size: 20px; font-weight: 500; margin: 0 0 4px 0;">Your space, your rules.</h3>
+                    <p style="font-family: 'Be Vietnam Pro', sans-serif; font-size: 14px; margin: 0; opacity: 0.9; line-height: 1.5;">Every word shared here is anchored in total anonymity. We do not store your identity, only your progress toward peace. You are safe to be seen as you are.</p>
                 </div>
-                """, unsafe_allow_html=True)
-            else:
-                # Check if this is an error-marker message
-                err_type = message.get("error_type")
-                if err_type:
-                    render_error_recovery_card(err_type, theme=st.session_state.theme)
-                else:
-                    formatted_html = markdown_to_html(message["content"])
-                    detected_mood = message.get("detected_mood", "Neutral 🧘‍♀️")
+                <div style="font-size: 48px; opacity: 0.15; flex-shrink: 0;">🛡️</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Render Chat logs
+            for message in st.session_state.messages:
+                if message["role"] == "user":
+                    safe_msg = html.escape(message["content"])
                     st.markdown(f"""
-                    <div class="chat-bubble-container assistant-chat-container">
-                        <div class="organic-shape chat-avatar assistant-chat-avatar">
-                            <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCurhPkDhZwxbyxMQLgheyl4Nsdu6tTk8Ny9AA6MSJae5j0eDDOhexuS6SOBVJJH6pPi3fGkg_BPeWJ2GUU6A--eMqu3pvqqWtH_LQm6WFqf-EpQpLsTPcwCy9fN2L4dtG-VKw3WUOIg1QcK2NAsn1m_dQ2JQDD43y3itiDxHnpRaEqAMNeYNei2YTp2X6lQRZRHvYiGHdynTMIDMjqmcRAuiHegSLzIAix3M2X0DpEyvqxq8KE0TP_Q"/>
+                    <div class="chat-bubble-container user-chat-container">
+                        <div class="chat-bubble user-chat-bubble">
+                            <p class="chat-text user-chat-text">{safe_msg}</p>
                         </div>
-                        <div class="assistant-bubble-wrap">
-                            <div class="chat-bubble assistant-chat-bubble">
-                                <p class="chat-text assistant-chat-text">{formatted_html}</p>
-                                <div class="mood-detected-tag">
-                                    <span>Primary mood detected: {detected_mood}</span>
+                        <div class="chat-avatar user-chat-avatar">ME</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    # Check if this is an error-marker message
+                    err_type = message.get("error_type")
+                    if err_type:
+                        render_error_recovery_card(err_type, theme=st.session_state.theme)
+                    else:
+                        formatted_html = markdown_to_html(message["content"])
+                        detected_mood = message.get("detected_mood", "Neutral 🧘‍♀️")
+                        st.markdown(f"""
+                        <div class="chat-bubble-container assistant-chat-container">
+                            <div class="organic-shape chat-avatar assistant-chat-avatar">
+                                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCurhPkDhZwxbyxMQLgheyl4Nsdu6tTk8Ny9AA6MSJae5j0eDDOhexuS6SOBVJJH6pPi3fGkg_BPeWJ2GUU6A--eMqu3pvqqWtH_LQm6WFqf-EpQpLsTPcwCy9fN2L4dtG-VKw3WUOIg1QcK2NAsn1m_dQ2JQDD43y3itiDxHnpRaEqAMNeYNei2YTp2X6lQRZRHvYiGHdynTMIDMjqmcRAuiHegSLzIAix3M2X0DpEyvqxq8KE0TP_Q"/>
+                            </div>
+                            <div class="assistant-bubble-wrap">
+                                <div class="chat-bubble assistant-chat-bubble">
+                                    <p class="chat-text assistant-chat-text">{formatted_html}</p>
+                                    <div class="mood-detected-tag">
+                                        <span>Primary mood detected: {detected_mood}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
 
-        # suggestions — only show when the last message is NOT an error
-        last_msg = st.session_state.messages[-1] if st.session_state.messages else None
-        if last_msg and last_msg["role"] == "assistant" and not last_msg.get("error_type"):
-            st.markdown("<p style='font-family: \"Be Vietnam Pro\", sans-serif; font-size: 13px; font-weight: 600; color: #904639; margin: 24px 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;'>Reflective Steps:</p>", unsafe_allow_html=True)
-            suggestions = [
-                ("🧘 Try grounding exercise", "Let's do a quick grounding exercise together."),
-                ("🌊 I feel overwhelmed", "I'm feeling really overwhelmed right now."),
-                ("💡 Tell me more about coping", "Can you tell me more about coping strategies?")
-            ]
-            with st.container(horizontal=True):
-                for idx, (label, prompt) in enumerate(suggestions):
-                    if st.button(label, key=f"sugg_{idx}", use_container_width=True):
-                        st.session_state.messages.append({"role": "user", "content": prompt})
-                        _send_message_with_error_handling(prompt)
-                        st.rerun()
+            # suggestions — only show when the last message is NOT an error
+            last_msg = st.session_state.messages[-1] if st.session_state.messages else None
+            if last_msg and last_msg["role"] == "assistant" and not last_msg.get("error_type"):
+                st.markdown("<p style='font-family: \"Be Vietnam Pro\", sans-serif; font-size: 13px; font-weight: 600; color: #904639; margin: 24px 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;'>Reflective Steps:</p>", unsafe_allow_html=True)
+                suggestions = [
+                    ("🧘 Try grounding exercise", "Let's do a quick grounding exercise together."),
+                    ("🌊 I feel overwhelmed", "I'm feeling really overwhelmed right now."),
+                    ("💡 Tell me more about coping", "Can you tell me more about coping strategies?")
+                ]
+                with st.container(horizontal=True):
+                    for idx, (label, prompt) in enumerate(suggestions):
+                        if st.button(label, key=f"sugg_{idx}", use_container_width=True):
+                            st.session_state.messages.append({"role": "user", "content": prompt})
+                            _send_message_with_error_handling(prompt)
+                            st.rerun()
 
         # Chat Input Box
         if user_input := st.chat_input(placeholder="Talk to Jeeva about how you're feeling today..."):
@@ -1440,56 +1583,168 @@ def main():
         </div>
         """, unsafe_allow_html=True)
 
-    # Footer
-    st.markdown("""
-    <div style="text-align: center; margin-top: var(--spacing-xl); padding-top: var(--spacing-md); border-top: 1px solid #dac1bd; font-family: 'Be Vietnam Pro', sans-serif;">
-        <p style="font-size: var(--font-sm); color: #59605c; line-height: 1.6; max-width: 600px; margin: 0 auto var(--spacing-sm) auto;">
-            <strong>Medical Disclaimer:</strong> Jeeva is an emotional support tool, not a replacement for professional clinical care. If you are in crisis, please contact emergency services immediately.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    with st.container(horizontal=True, key="footer_links"):
-        if st.button("Terms of Service", key="footer_tos"):
-            st.session_state.active_tab = "Terms"
-            st.rerun()
-        if st.button("Privacy Policy", key="footer_privacy"):
-            st.session_state.active_tab = "Privacy"
-            st.rerun()
-        if st.button("Crisis Resources", key="footer_crisis"):
-            st.session_state.active_tab = "Crisis"
-            st.rerun()
+    # Footer — only render on non-Sanctuary tabs.
+    # On the Sanctuary tab, the chat layout is viewport-locked and the footer would
+    # create visible content below the fixed chat input causing bottom whitespace.
+    if active_tab != "Sanctuary":
+        st.markdown("""
+        <div style="text-align: center; margin-top: var(--spacing-xl); padding-top: var(--spacing-md); border-top: 1px solid #dac1bd; font-family: 'Be Vietnam Pro', sans-serif;">
+            <p style="font-size: var(--font-sm); color: #59605c; line-height: 1.6; max-width: 600px; margin: 0 auto var(--spacing-sm) auto;">
+                <strong>Medical Disclaimer:</strong> Jeeva is an emotional support tool, not a replacement for professional clinical care. If you are in crisis, please contact emergency services immediately.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        with st.container(horizontal=True, key="footer_links"):
+            if st.button("Terms of Service", key="footer_tos"):
+                st.session_state.active_tab = "Terms"
+                st.rerun()
+            if st.button("Privacy Policy", key="footer_privacy"):
+                st.session_state.active_tab = "Privacy"
+                st.rerun()
+            if st.button("Crisis Resources", key="footer_crisis"):
+                st.session_state.active_tab = "Crisis"
+                st.rerun()
 
-    # Inject JavaScript to intercept clicks on the custom menu button
-    # and programmatically click the native sidebar toggle controls,
-    # achieving instantaneous, synchronized client-side toggling.
+    # Inject JavaScript to handle layout observations, sidebar toggling, and smart auto-scrolling.
+    # Note: Since Streamlit components are sandboxed inside an iframe, we safely query window.parent.document
+    # to measure layout containers and synchronize styling parameters client-side.
     components.html("""
     <script>
-        const parentDoc = window.parent.document;
-        const interval = setInterval(() => {
+        const parentDoc = window.parent ? window.parent.document : document;
+
+        // 1. Sidebar Toggle Click Interceptor (maintains client-side responsive side-menus)
+        const setupSidebarToggle = () => {
             const buttons = Array.from(parentDoc.querySelectorAll('button'));
-            const customBtn = buttons.find(btn => {
-                return btn.innerText && btn.innerText.trim() === '☰';
+            const customBtn = buttons.find(btn => btn.innerText && btn.innerText.trim() === '☰');
+            if (customBtn && !customBtn.dataset.boundToggle) {
+                customBtn.dataset.boundToggle = "true";
+                customBtn.addEventListener('click', (e) => {
+                    const nativeToggle = parentDoc.querySelector('[data-testid="stSidebarCollapsedControl"]');
+                    if (nativeToggle) {
+                        nativeToggle.click();
+                    } else {
+                        const closeBtn = parentDoc.querySelector('[data-testid="stSidebarHeader"] button');
+                        if (closeBtn) {
+                            closeBtn.click();
+                        }
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, true);
+            }
+        };
+
+        // 2. Real-Time Dimension Measurements using ResizeObserver (Dynamic Spacing Variables)
+        const setupLayoutObserver = () => {
+            const header = parentDoc.querySelector('.st-key-main_header');
+            const footer = parentDoc.querySelector('[data-testid="stBottom"]');
+            const sidebar = parentDoc.querySelector('[data-testid="stSidebar"]');
+
+            const updateLayout = () => {
+                const headerHeight = header ? header.getBoundingClientRect().height : 0;
+                const footerHeight = footer ? footer.getBoundingClientRect().height : 0;
+                let sidebarWidth = 0;
+                
+                // Streamlit sidebar translated off-screen has left < 0 even if width > 0.
+                // We check if it is positioned exactly at left: 0 to determine if it is expanded.
+                if (sidebar && sidebar.getBoundingClientRect().left === 0) {
+                    sidebarWidth = sidebar.getBoundingClientRect().width;
+                }
+
+                parentDoc.documentElement.style.setProperty('--header-height', `${headerHeight}px`);
+                parentDoc.documentElement.style.setProperty('--input-height', `${footerHeight}px`);
+                parentDoc.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth}px`);
+            };
+
+            const layoutResizeObserver = new ResizeObserver(() => {
+                updateLayout();
             });
-            
-            if (customBtn) {
-                if (!customBtn.dataset.boundToggle) {
-                    customBtn.dataset.boundToggle = "true";
-                    customBtn.addEventListener('click', (e) => {
-                        const nativeToggle = parentDoc.querySelector('[data-testid="stSidebarCollapsedControl"]');
-                        if (nativeToggle) {
-                            nativeToggle.click();
-                        } else {
-                            const closeBtn = parentDoc.querySelector('[data-testid="stSidebarHeader"] button');
-                            if (closeBtn) {
-                                closeBtn.click();
+
+            if (header) layoutResizeObserver.observe(header);
+            if (footer) layoutResizeObserver.observe(footer);
+            if (sidebar) layoutResizeObserver.observe(sidebar);
+
+            // Run an immediate calculation
+            updateLayout();
+            return updateLayout;
+        };
+
+        // 3. Intelligent Scrolling Viewport Control using MutationObserver
+        const setupScrolling = () => {
+            const chatContainer = parentDoc.querySelector('.st-key-chat_history_container');
+            if (!chatContainer) return;
+
+            let programmaticScroll = false;
+            let userIsScrolling = false;
+
+            const scrollToBottom = () => {
+                programmaticScroll = true;
+                chatContainer.scrollTo({
+                    top: chatContainer.scrollHeight,
+                    behavior: 'smooth'
+                });
+                setTimeout(() => {
+                    programmaticScroll = false;
+                }, 600); // Wait for smooth scroll completion
+            };
+
+            // Detect if user scrolls away from bottom (user scroll-lock activation)
+            chatContainer.addEventListener('scroll', () => {
+                if (programmaticScroll) return;
+                const atBottom = (chatContainer.scrollHeight - chatContainer.scrollTop - chatContainer.clientHeight) <= 25;
+                if (atBottom) {
+                    userIsScrolling = false;
+                } else {
+                    userIsScrolling = true;
+                }
+            });
+
+            // Mutation observer watching for chat log additions (responses or messages)
+            const chatObserver = new MutationObserver((mutations) => {
+                let hasUserMessage = false;
+                for (const mutation of mutations) {
+                    for (const node of mutation.addedNodes) {
+                        if (node.nodeType === Node.ELEMENT_NODE) {
+                            if (node.querySelector('.user-chat-bubble') || node.classList.contains('user-chat-bubble')) {
+                                hasUserMessage = true;
+                                break;
                             }
                         }
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }, true);
+                    }
                 }
+
+                // If user sent a message, override and force scroll. Otherwise, respect user scroll-lock.
+                if (hasUserMessage) {
+                    userIsScrolling = false;
+                    scrollToBottom();
+                } else if (!userIsScrolling) {
+                    scrollToBottom();
+                }
+            });
+
+            chatObserver.observe(chatContainer, { childList: true, subtree: true });
+            
+            // Note: No initial scrollToBottom() here — we let the chat history
+            // container render naturally. The MutationObserver above handles
+            // auto-scroll only when new messages are actually added.
+            // Calling scrollToBottom() on init caused visible auto-scroll on every
+            // page load and Streamlit rerun, which was jarring for the user.
+        };
+
+        // Initialize routines once main frame elements exist
+        const init = () => {
+            setupSidebarToggle();
+            const triggerUpdate = setupLayoutObserver();
+            setupScrolling();
+            setTimeout(triggerUpdate, 500);
+        };
+
+        const checkElements = setInterval(() => {
+            if (parentDoc.querySelector('.st-key-main_header') || parentDoc.querySelector('[data-testid="stBottom"]')) {
+                clearInterval(checkElements);
+                init();
             }
-        }, 100);
+        }, 50);
     </script>
     """, height=0, width=0)
 
