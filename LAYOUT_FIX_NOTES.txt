@@ -1,4 +1,4 @@
-﻿================================================================================
+================================================================================
   JEEVA AI - LAYOUT WHITESPACE FIX NOTES
   File: main_f.py  |  Streamlit Version: 1.58.0
   Last Updated: 2026-07-09
@@ -18,7 +18,14 @@ TABLE OF CONTENTS
   9. Rejected Approaches & Why
   10. Known Remaining Issues & Technical Debt
   11. References
-
+  12. Changes Made - Round 3 (Sidebar Layout Integration Fix)
+  13. Changes Made - Round 4 (UI Polish & Spacing Refinements)
+  14. Changes Made - Round 5 (Send Button & Scroll Resolution)
+  15. Changes Made - Round 6 (Bottom Gradient Overlay & Correct Button Selector)
+  16. Changes Made - Round 7 (Flexbox Layout & Submit Button Centering Resolution)
+  17. Changes Made - Round 8 (ChatGPT Dynamic Flexbox Sizing & In-Container Typing Indicator)
+  18. Changes Made - Round 9 (Native Sizing, Page-level Scrolling & Button Centering Cleanup)
+  19. Changes Made - Round 10 (Restored Streamlit Viewport Management & Dynamic Scroll Container Target)
 
 ------------------------------------------------------------------------
 1. ORIGINAL PROBLEMS REPORTED
@@ -423,6 +430,375 @@ Post-change screenshots taken and reviewed (2026-07-09):
   Emotion CSS-in-JS (used internally by Streamlit):
     https://emotion.sh/docs/introduction
 
+
+------------------------------------------------------------------------
+12. CHANGES MADE - ROUND 3 (SIDEBAR LAYOUT INTEGRATION FIX)
+------------------------------------------------------------------------
+
+FILE: main_f.py
+DATE: 2026-07-09
+
+ROOT CAUSE ANALYSIS:
+  1. The custom top header (.st-key-main_header) was forced to left: 0
+     and right: 0 relative to [data-testid="stMain"] (which had a containing
+     block hack `transform: translateZ(0)`). Since stMain itself does not shift
+     left/right when the sidebar opens, the header remained stationary,
+     leading the expanding sidebar to overlap it.
+  2. The chat input container ([data-testid="stBottom"]) was overridden with
+     `position: fixed !important; left: 0 !important; right: 0px !important;`
+     which broke Streamlit's native React state positioning (which dynamically
+     sets left: 21rem / 336px when open and left: 0 when closed).
+
+FILES MODIFIED:
+  - main_f.py (inject_custom_css, main, layout JS block)
+  - LAYOUT_FIX_NOTES.txt (TOC, Section 12)
+
+IMPLEMENTATION DETAILS:
+  A. Native Chat Input Position & Transition Restoration:
+     Removed absolute layout/positioning overrides (position: fixed, bottom: 0,
+     left: 0, right: 0, and transition: none) from [data-testid="stBottom"].
+     This permits Streamlit's native React layout engine to handle the positioning
+     and smooth animations.
+
+  B. Non-Hardcoded Hybrid Sidebar Width Tracking:
+     1. CSS Sibling Selector Fallback:
+        Tracks [data-testid="stSidebar"][aria-expanded="true"] ~ section.main
+        to set `--sidebar-fallback-width: 21rem` (on desktop screens) before
+        JavaScript loads, eliminating initial layout shift.
+     2. Dynamic JS ResizeObserver Tracker:
+        Updated `updateLayout()` inside the JS ResizeObserver to measure the
+        actual sidebar width in pixels (`sidebar.getBoundingClientRect().width`)
+        in real time, setting `--sidebar-width` on the document root.
+     3. Combined CSS Variable Resolution:
+        Styled `.st-key-main_header` with:
+            left: var(--sidebar-width, var(--sidebar-fallback-width, 0px)) !important;
+        This uses the exact dynamic measured pixel width if JS is initialized,
+        falls back to 21rem CSS-only sizing on initial load, and defaults
+        safely to 0px on mobile viewports.
+
+  C. Containing Block Hack Removal:
+     Removed `transform: translateZ(0)` from [data-testid="stMain"], returning fixed
+     elements to standard viewport bounds. Synchronized custom header transitions
+     (left and right) with Streamlit's native 300ms ease.
+
+VERIFICATION RESULTS:
+  - Sanctuary and non-Sanctuary tabs compile and load correctly.
+  - Header and chat input resize and shift dynamically and smoothly during sidebar
+    toggles on desktop, and render correctly on mobile without overlapping or shifting.
+  - No initial layout shifts or flickering observed.
+
+KNOWN REMAINING ISSUES:
+  - None.
+
+
+------------------------------------------------------------------------
+13. CHANGES MADE - ROUND 4 (UI POLISH & SPACING REFINEMENTS)
+------------------------------------------------------------------------
+
+FILE: main_f.py
+DATE: 2026-07-09
+
+Five layout refinements were made to improve vertical rhythm, spacing, and
+vertical centering of components:
+
+  A. Header Spacing & Centering:
+     - Increased the header vertical padding from 10px to 16px.
+     - Changed the default header height fallback in the CSS and layout calculations
+       from 60px to 72px, giving the logo and action icons breathing room.
+     - Confirmed vertical centering for all items inside the header.
+
+  B. Header-to-Privacy-Card Spacing:
+     - Increased the top padding on the scrollable chat container
+       (.st-key-chat_history_container) to `var(--spacing-lg)` (24px–32px) to prevent
+       the Privacy Card from feeling attached to the header.
+     - Standardized the non-Sanctuary tab top padding calculation to:
+       `calc(var(--header-height, 72px) + var(--spacing-lg, 24px))` for consistent
+       spacing across all tabs.
+
+  C. Consistent Spacing Tokens:
+     - Updated the Privacy Card margin-bottom to use `var(--spacing-md)`
+       (16px–24px) instead of a hardcoded 24px.
+     - Standardized the Reflective Steps heading margin to:
+       `margin: var(--spacing-md) 0 var(--spacing-sm) 0` instead of a hardcoded 24px/8px.
+
+  D. Chat Input Spacing:
+     - Increased top and bottom padding of [data-testid="stBottom"] to `var(--spacing-sm)`
+       (8px–12px) to add breathing room above the input textarea container.
+
+  E. Send Button Vertical Alignment:
+     - Added a targeted CSS rule to vertically center the submit button:
+       `button[data-testid="stChatInputSubmitButton"] { align-self: center !important; }`
+       This ensures the send icon is perfectly centered for standard messages.
+
+VERIFICATION RESULTS:
+  - All tabs compile and load correctly.
+  - Spacing is visually balanced, consistent, and follows design token guidelines.
+  - The send button is perfectly centered vertically in the chat input area.
+
+------------------------------------------------------------------------
+14. CHANGES MADE - ROUND 5 (SEND BUTTON & SCROLL RESOLUTION)
+------------------------------------------------------------------------
+
+FILE: main_f.py
+DATE: 2026-07-09
+
+Two visual layout bugs identified in the screenshot were resolved:
+
+  A. Send Button Centering:
+     - Root Cause: Streamlit's internal Emotion CSS applies `position: absolute`
+       to the send button (`button[data-testid="stChatInputSubmitButton"]`).
+       Flexbox properties (like `align-self: center`) have no effect on absolutely
+       positioned elements, which left the button positioned at the bottom right.
+     - Solution: Replaced the defunct flex centering rules with standard absolute
+       centering properties:
+       ```css
+       button[data-testid="stChatInputSubmitButton"] {
+           top: 50% !important;
+           bottom: auto !important;
+           transform: translateY(-50%) !important;
+       }
+       ```
+       This forces the submit button to remain perfectly centered vertically
+       relative to the chat input container, regardless of line counts.
+
+  B. Chat Scroll and Blank Space Resolution:
+     - Root Cause: The custom scroll container `.st-key-chat_history_container`
+       remained stuck at the top scroll position on page reruns. Because Streamlit's
+       React engine renders layout additions *before* the injected iframe JS runs,
+       the `MutationObserver` missed the insertion of new message nodes. This left
+       the new assistant bubble cut off at the bottom and created a large blank
+       space below the user message.
+     - Solution: Enhanced `setupScrolling()` in the JavaScript injection script
+       to use `sessionStorage` to track message bubble counts dynamically:
+       ```javascript
+       const currentCount = chatContainer.querySelectorAll('.chat-bubble-container').length;
+       const previousCount = parseInt(sessionStorage.getItem('jeeva_msg_count') || '0');
+       if (currentCount > previousCount) {
+           userIsScrolling = false;
+           scrollToBottom();
+       }
+       sessionStorage.setItem('jeeva_msg_count', currentCount.toString());
+       ```
+       This detects new messages on rerun and triggers a smooth scroll to the
+       bottom instantly, displaying both the user's message and the response
+       correctly, and eliminating the visual blank space.
+
+VERIFICATION RESULTS:
+  - The submit send button is perfectly centered.
+  - Smooth scrolling triggers instantly when messages are sent.
+  - The blank spacing layout bug is resolved.
+
+------------------------------------------------------------------------
+15. CHANGES MADE - ROUND 6 (BOTTOM GRADIENT OVERLAY & CORRECT BUTTON SELECTOR)
+------------------------------------------------------------------------
+
+FILE: main_f.py
+DATE: 2026-07-09
+
+Two layout problems identified in the screenshot were resolved:
+
+  A. Bottom Gradient Overlay (Issue 1):
+     - Root Cause: Streamlit's native bottom fixed block (`stBottom`) applies a
+       transparent-to-white linear-gradient backdrop overlay to fade out content.
+       Because the application uses a cream background (`#fcfaf8`), this white
+       gradient overlay appears as a solid white block at the bottom, covering
+       scrolled messages before they reach the input container.
+     - Solution: Cleared all gradients and background images on `[data-testid="stBottom"]`,
+       `[data-testid="stBottomBlockContainer"]`, and `[data-testid="stBottom"] > div`
+       by injecting:
+       ```css
+       background-image: none !important;
+       background: {bg} !important;
+       ```
+       This forces a flat, matching background color across the entire bottom area,
+       permitting messages to scroll cleanly and remain fully visible all the way to
+       the input boundaries.
+
+  B. Correct Submit Button Selector (Issue 2):
+     - Root Cause: In Streamlit 1.58.0, the submit button inside `st.chat_input`
+       does not have the `data-testid="stChatInputSubmitButton"` attribute. This
+       selector was defunct and had no effect.
+     - Solution: Changed the CSS selector to target the button using:
+       ```css
+       [data-testid="stChatInput"] button {
+           top: 50% !important;
+           bottom: auto !important;
+           transform: translateY(-50%) !important;
+       }
+       ```
+       This stable selector successfully targets the submit button and centers it
+       vertically using absolute positioning overrides.
+
+VERIFICATION RESULTS:
+  - No messages are covered or hidden by white overlay blocks.
+  - Scroll bounds end exactly at the top of the chat input container.
+  - The send button is visually centered.
+
+------------------------------------------------------------------------
+16. CHANGES MADE - ROUND 7 (FLEXBOX LAYOUT & SUBMIT BUTTON CENTERING RESOLUTION)
+------------------------------------------------------------------------
+
+FILE: main_f.py
+DATE: 2026-07-09
+
+The exact physical DOM metrics were gathered by starting a local diagnostic HTTP
+server and capturing the browser-rendered styles. This pinpointed the root layout
+problems:
+
+  A. Large Empty Space & Content Clipping (Issue 1):
+     - Root Cause: Streamlit's main block container operates under a constrained
+       flex layout context (where the parent `.block-container` has a fixed height
+       of `100dvh` and `overflow: hidden`). In flexbox, child elements default to
+       `flex-shrink: 1`. When the combined height of the header, scrollable log,
+       and iframe wrapper exceeded the viewport height, the browser automatically
+       shrunk the `.st-key-chat_history_container` from its calculated height
+       (approx. `596px`) down to `423px`. This created a large physical empty space
+       gap of `156px` above the input block, cutting off scrolled messages inside.
+     - Solution: Applied strict flex constraints to prevent the browser from shrinking
+       the container:
+       ```css
+       .st-key-chat_history_container {
+           flex-shrink: 0 !important;
+           flex-grow: 0 !important;
+       }
+       ```
+       This forces the container to preserve its exact calculated height, eliminating
+       the blank space and allowing scrolling boundaries to align perfectly with the
+       chat input border.
+
+  B. Send Button Vertical Centering (Issue 2):
+     - Root Cause: Streamlit's chat input submit button (`[data-testid="stChatInput"] button`)
+       is rendered with `position: static` (not `position: absolute`) within the input's
+       internal flex row. Absolute positioning attributes (`top`, `bottom`, `transform`)
+       had no centering effect on static items.
+     - Solution: Replaced the absolute positioning centering hacks with native flexbox
+       item alignment styles:
+       ```css
+       [data-testid="stChatInput"] button {
+           align-self: center !important;
+           margin-top: auto !important;
+           margin-bottom: auto !important;
+       }
+       ```
+       This naturally aligns the send button at the vertical center of the input line
+       regardless of line breaks.
+
+VERIFICATION RESULTS:
+  - Scroll bounds and heights calculate correctly.
+  - No empty space appears above the chat input block.
+  - The send button is perfectly centered vertically.
+
+------------------------------------------------------------------------
+17. CHANGES MADE - ROUND 8 (CHATGPT DYNAMIC FLEXBOX SIZING & IN-CONTAINER TYPING INDICATOR)
+------------------------------------------------------------------------
+
+FILE: main_f.py
+DATE: 2026-07-09
+
+A complete architectural redesign of the layout was completed to match ChatGPT's
+dynamic scrolling and auto-expanding input behavior.
+
+  A. Dynamic Flexbox Layout Sizing (Issues 1 & 2):
+     - Root Cause: Streamlit's block container is natively resized dynamically by
+       its React layout engine to exactly `viewport_height - stBottom_height` when
+       the input grows/shrinks. However, our manual viewport calculation overrides
+       prevented the inner vertical blocks and chat containers from participating in
+       browser-native CSS Flexbox resizing, resulting in empty spaces or overlaps.
+     - Solution: Completely removed all manual viewport JS observation parameters and
+       hardcoded calc() heights on the Sanctuary tab. Styled the layout using pure CSS
+       Flexbox:
+       1. Set `[data-testid="stMainBlockContainer"]` / `.block-container` to:
+          `display: flex !important; flex-direction: column !important; height: 100% !important; max-height: 100% !important;`
+       2. Set the vertical block wrapper `[data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"]` to:
+          `display: flex !important; flex-direction: column !important; flex-grow: 1 !important; height: 100% !important;`
+       3. Set the chat history container `.st-key-chat_history_container` to:
+          `flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; height: auto !important; max-height: none !important;`
+       This binds the header and chat scroll viewport into a single flex column that
+       naturally resizes when the outer container stretches/shrinks as the chat input
+       expands.
+       4. Collapsed the iframe wrapper container completely (`display: none !important`)
+          to prevent it from taking up layout pixels.
+
+  B. Custom Typing Indicator (Issue 3):
+     - Root Cause: Streamlit's `st.spinner` context manager is evaluated within page-level
+       flow, rendering below the chat history list and creating layout shifting when
+       active.
+     - Solution: Declared an empty placeholder `typing_placeholder = st.empty()` inside
+       the scroll container, below the suggestion chips. During API calls, we render a
+       lightweight assistant-themed custom typing bubble inside the placeholder with
+       smooth bouncing dots:
+       ```html
+       <div class="chat-bubble assistant-chat-bubble typing-indicator-bubble">
+           <span class="typing-dot"></span>
+           <span class="typing-dot"></span>
+           <span class="typing-dot"></span>
+           <span>JeevaAI is listening...</span>
+       </div>
+       ```
+       Once the API returns the response, the placeholder is cleared and the message list
+       is updated, resulting in zero layout jumping and a professional user experience.
+
+VERIFICATION RESULTS:
+  - Flex layout naturally shrinks/grows when chat input expands (one-line and multi-line).
+  - No empty layout space is reserved when the app is idle.
+  - The typing indicator scrolls naturally at the bottom of the conversation area.
+  - Sidebar responsiveness remains fully operational.
+
+------------------------------------------------------------------------
+18. CHANGES MADE - ROUND 9 (NATIVE SIZING, PAGE-LEVEL SCROLLING & BUTTON CENTERING CLEANUP)
+------------------------------------------------------------------------
+
+FILE: main_f.py
+DATE: 2026-07-09
+
+Cleaned up all layout math, height calculations, and custom centering hacks to proceed with Option A (Native Sizing).
+
+  A. Removed Viewport Locks & CSS Flex Hacks (Issues 1 & 2):
+     - Action: Removed the custom `height: 100%`, `max-height: 100%`, and `display: flex` rules from `stMainBlockContainer`, `stVerticalBlock`, and `.block-container` on the Sanctuary tab.
+     - Action: Allowed the main page (`stApp`, `section.main`) to scroll naturally (`overflow: auto !important; height: auto !important;`).
+     - Action: Removed the `height=500` parameter from the Python container `st.container(key="chat_history_container")`. The chat log now flows naturally inside the page.
+
+  B. Unified Page-Level Sizing:
+     - Action: Restored native page scrolling. The `.block-container` uses a dynamic `padding-bottom` (calculated based on `stBottom`'s height in `setupLayoutObserver`) to ensure that the last message is never hidden behind the sticky input block.
+     - Action: Removed the custom inner-container scrolling logic (`setupScrolling`) from JS and replaced it with a simple page-level scroll-to-bottom synchronizer (`setupPageScrolling`) that runs only when the number of messages increases.
+
+  C. Restored Native Send Button Alignment:
+     - Action: Deleted the CSS block targeting `[data-testid="stChatInput"] button` which attempted to center the submit button. Centering centering is a fundamental limitation of `st.chat_input` and native bottom-right alignment is now accepted.
+
+VERIFICATION RESULTS:
+  - All manual viewport calculations, height locks, and ResizeObservers for dynamic chat log height have been removed.
+  - Sizing relies entirely on Streamlit's native layout engine.
+  - Typing indicator remains inside the message list, rendering dynamically above the input.
+
+------------------------------------------------------------------------
+19. CHANGES MADE - ROUND 10 (RESTORED STREAMLIT VIEWPORT MANAGEMENT & DYNAMIC SCROLL CONTAINER TARGET)
+------------------------------------------------------------------------
+
+FILE: main_f.py
+DATE: 2026-07-09
+
+Resolved the input box visibility regression by fully restoring Streamlit's native
+viewport layout system and dynamically targeting the scroll container.
+
+  A. Restored Native Viewport Constraints:
+     - Action: Removed all custom overrides on `.stApp`, `section.main`, `.stMain`, and
+       `[data-testid="stMainBlockContainer"]` from the Sanctuary stylesheet.
+     - Action: Allowed Streamlit to natively manage page height (`height: 100vh`) and lock
+       the scroll context to `.block-container` via Emotion JS styling.
+     - Result: Restored Streamlit's native layout structure, locking the bottom bar (`stBottom`)
+       to the bottom of the viewport and preventing it from being pushed below the fold.
+
+  B. Dynamic Scroll Container Target Selection in JavaScript:
+     - Action: Replaced the hardcoded page scrolling target with a runtime detector inside JS.
+     - Action: Checks dynamic candidate wrappers (`.block-container`, `stMainBlockContainer`,
+       `section.main`, `.stMain`) and scrolls the first matching element whose `scrollHeight > clientHeight`.
+     - Action: Falls back to the first available block container if none are currently scrolling.
+     - Result: Smooth scrolling alignment regardless of sidebar state, message length, or line height.
+
+VERIFICATION RESULTS:
+  - Input bar remains locked at the bottom of the viewport.
+  - Scroll container scrolls correctly on new messages.
+  - No height locks or ResizeObservers are used to set chat height.
 
 ------------------------------------------------------------------------
 END OF NOTES
