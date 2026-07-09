@@ -334,10 +334,13 @@ def inject_custom_css(theme, font_scale="Spacious"):
             color: {text} !important;
             font-family: 'Be Vietnam Pro', sans-serif !important;
         }}
-        [data-testid="stAppViewBlockContainer"] {{
+        .block-container, [data-testid="stAppViewBlockContainer"] {{
             max-width: 100% !important; /* Fluid responsiveness */
             margin: 0 auto !important; 
-            padding: 0px var(--spacing-lg) var(--spacing-lg) var(--spacing-lg) !important;
+            padding-top: 0.5rem !important;
+            padding-bottom: 1rem !important;
+            padding-left: var(--spacing-lg) !important;
+            padding-right: var(--spacing-lg) !important;
         }}
 
         /* Typography globally scaled */
@@ -360,21 +363,11 @@ def inject_custom_css(theme, font_scale="Spacious"):
         
         /* Hide Default Streamlit Header options & deploy buttons */
         [data-testid="stHeader"] {{
-            background-color: transparent !important;
-            z-index: 999990 !important;
-        }}
-        [data-testid="stHeader"] [data-testid="stDeployButton"],
-        [data-testid="stHeader"] button[title="View developer options"],
-        [data-testid="stHeader"] [data-testid="stMainMenu"],
-        [data-testid="stHeader"] button[kind="headerNoPadding"],
-        button:has(+ button[kind="headerNoPadding"]),
-        [data-testid="stHeader"] > div > div:nth-child(1) {{
             display: none !important;
-            visibility: hidden !important;
-            width: 0 !important;
-            height: 0 !important;
-            margin: 0 !important;
-            padding: 0 !important;
+            height: 0px !important;
+            min-height: 0px !important;
+            background-color: transparent !important;
+            z-index: -999999 !important;
             pointer-events: none !important;
         }}
 
@@ -423,8 +416,7 @@ def inject_custom_css(theme, font_scale="Spacious"):
 
         /* Hide Default Footer */
         footer {{
-            visibility: hidden !important;
-            height: 0px !important;
+            display: none !important;
         }}
 
         /* Buttons globally styled */
@@ -608,17 +600,19 @@ def inject_custom_css(theme, font_scale="Spacious"):
         }}
 
         /* Remove aggressive padding on sticky bottom */
-        [data-testid="stBottom"] {{
-            background-color: transparent !important;
-            padding-bottom: 0px !important;
-            padding-top: 0px !important;
+        [data-testid="stBottom"], [data-testid="stBottomBlockContainer"] {{
+            background-color: {bg} !important;
+            padding-bottom: 15px !important;
+            padding-top: 10px !important;
             margin: 0 !important;
             height: auto !important;
         }}
         [data-testid="stBottom"] > div {{
             padding: 0 !important;
+            padding-bottom: 0px !important;
             margin: 0 !important;
             height: auto !important;
+            background-color: transparent !important;
         }}
         
         /* Reduce the artificial empty space injected by Streamlit below content */
